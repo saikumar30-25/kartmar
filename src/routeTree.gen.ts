@@ -10,12 +10,45 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as PostRequirementRouteImport } from './routes/post-requirement'
+import { Route as PostListingRouteImport } from './routes/post-listing'
+import { Route as PartnerRouteImport } from './routes/partner'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as HomeRouteImport } from './routes/home'
+import { Route as DealsRouteImport } from './routes/deals'
+import { Route as BrowseRouteImport } from './routes/browse'
+import { Route as AdvisorRouteImport } from './routes/advisor'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as RequirementsIdRouteImport } from './routes/requirements.$id'
+import { Route as PartnerRegisterRouteImport } from './routes/partner.register'
+import { Route as ListingsIdRouteImport } from './routes/listings.$id'
+import { Route as DealsIdRouteImport } from './routes/deals.$id'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PostRequirementRoute = PostRequirementRouteImport.update({
+  id: '/post-requirement',
+  path: '/post-requirement',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PostListingRoute = PostListingRouteImport.update({
+  id: '/post-listing',
+  path: '/post-listing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartnerRoute = PartnerRouteImport.update({
+  id: '/partner',
+  path: '/partner',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -23,40 +56,184 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HomeRoute = HomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DealsRoute = DealsRouteImport.update({
+  id: '/deals',
+  path: '/deals',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BrowseRoute = BrowseRouteImport.update({
+  id: '/browse',
+  path: '/browse',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdvisorRoute = AdvisorRouteImport.update({
+  id: '/advisor',
+  path: '/advisor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RequirementsIdRoute = RequirementsIdRouteImport.update({
+  id: '/requirements/$id',
+  path: '/requirements/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartnerRegisterRoute = PartnerRegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => PartnerRoute,
+} as any)
+const ListingsIdRoute = ListingsIdRouteImport.update({
+  id: '/listings/$id',
+  path: '/listings/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DealsIdRoute = DealsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => DealsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/advisor': typeof AdvisorRoute
+  '/browse': typeof BrowseRoute
+  '/deals': typeof DealsRouteWithChildren
+  '/home': typeof HomeRoute
   '/login': typeof LoginRoute
+  '/partner': typeof PartnerRouteWithChildren
+  '/post-listing': typeof PostListingRoute
+  '/post-requirement': typeof PostRequirementRoute
+  '/profile': typeof ProfileRoute
   '/signup': typeof SignupRoute
+  '/deals/$id': typeof DealsIdRoute
+  '/listings/$id': typeof ListingsIdRoute
+  '/partner/register': typeof PartnerRegisterRoute
+  '/requirements/$id': typeof RequirementsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/advisor': typeof AdvisorRoute
+  '/browse': typeof BrowseRoute
+  '/deals': typeof DealsRouteWithChildren
+  '/home': typeof HomeRoute
   '/login': typeof LoginRoute
+  '/partner': typeof PartnerRouteWithChildren
+  '/post-listing': typeof PostListingRoute
+  '/post-requirement': typeof PostRequirementRoute
+  '/profile': typeof ProfileRoute
   '/signup': typeof SignupRoute
+  '/deals/$id': typeof DealsIdRoute
+  '/listings/$id': typeof ListingsIdRoute
+  '/partner/register': typeof PartnerRegisterRoute
+  '/requirements/$id': typeof RequirementsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/advisor': typeof AdvisorRoute
+  '/browse': typeof BrowseRoute
+  '/deals': typeof DealsRouteWithChildren
+  '/home': typeof HomeRoute
   '/login': typeof LoginRoute
+  '/partner': typeof PartnerRouteWithChildren
+  '/post-listing': typeof PostListingRoute
+  '/post-requirement': typeof PostRequirementRoute
+  '/profile': typeof ProfileRoute
   '/signup': typeof SignupRoute
+  '/deals/$id': typeof DealsIdRoute
+  '/listings/$id': typeof ListingsIdRoute
+  '/partner/register': typeof PartnerRegisterRoute
+  '/requirements/$id': typeof RequirementsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/signup'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/advisor'
+    | '/browse'
+    | '/deals'
+    | '/home'
+    | '/login'
+    | '/partner'
+    | '/post-listing'
+    | '/post-requirement'
+    | '/profile'
+    | '/signup'
+    | '/deals/$id'
+    | '/listings/$id'
+    | '/partner/register'
+    | '/requirements/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/signup'
-  id: '__root__' | '/' | '/login' | '/signup'
+  to:
+    | '/'
+    | '/admin'
+    | '/advisor'
+    | '/browse'
+    | '/deals'
+    | '/home'
+    | '/login'
+    | '/partner'
+    | '/post-listing'
+    | '/post-requirement'
+    | '/profile'
+    | '/signup'
+    | '/deals/$id'
+    | '/listings/$id'
+    | '/partner/register'
+    | '/requirements/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/advisor'
+    | '/browse'
+    | '/deals'
+    | '/home'
+    | '/login'
+    | '/partner'
+    | '/post-listing'
+    | '/post-requirement'
+    | '/profile'
+    | '/signup'
+    | '/deals/$id'
+    | '/listings/$id'
+    | '/partner/register'
+    | '/requirements/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
+  AdvisorRoute: typeof AdvisorRoute
+  BrowseRoute: typeof BrowseRoute
+  DealsRoute: typeof DealsRouteWithChildren
+  HomeRoute: typeof HomeRoute
   LoginRoute: typeof LoginRoute
+  PartnerRoute: typeof PartnerRouteWithChildren
+  PostListingRoute: typeof PostListingRoute
+  PostRequirementRoute: typeof PostRequirementRoute
+  ProfileRoute: typeof ProfileRoute
   SignupRoute: typeof SignupRoute
+  ListingsIdRoute: typeof ListingsIdRoute
+  RequirementsIdRoute: typeof RequirementsIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -68,11 +245,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/post-requirement': {
+      id: '/post-requirement'
+      path: '/post-requirement'
+      fullPath: '/post-requirement'
+      preLoaderRoute: typeof PostRequirementRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/post-listing': {
+      id: '/post-listing'
+      path: '/post-listing'
+      fullPath: '/post-listing'
+      preLoaderRoute: typeof PostListingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/partner': {
+      id: '/partner'
+      path: '/partner'
+      fullPath: '/partner'
+      preLoaderRoute: typeof PartnerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/home': {
+      id: '/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof HomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/deals': {
+      id: '/deals'
+      path: '/deals'
+      fullPath: '/deals'
+      preLoaderRoute: typeof DealsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/browse': {
+      id: '/browse'
+      path: '/browse'
+      fullPath: '/browse'
+      preLoaderRoute: typeof BrowseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/advisor': {
+      id: '/advisor'
+      path: '/advisor'
+      fullPath: '/advisor'
+      preLoaderRoute: typeof AdvisorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -82,13 +322,73 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/requirements/$id': {
+      id: '/requirements/$id'
+      path: '/requirements/$id'
+      fullPath: '/requirements/$id'
+      preLoaderRoute: typeof RequirementsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/partner/register': {
+      id: '/partner/register'
+      path: '/register'
+      fullPath: '/partner/register'
+      preLoaderRoute: typeof PartnerRegisterRouteImport
+      parentRoute: typeof PartnerRoute
+    }
+    '/listings/$id': {
+      id: '/listings/$id'
+      path: '/listings/$id'
+      fullPath: '/listings/$id'
+      preLoaderRoute: typeof ListingsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/deals/$id': {
+      id: '/deals/$id'
+      path: '/$id'
+      fullPath: '/deals/$id'
+      preLoaderRoute: typeof DealsIdRouteImport
+      parentRoute: typeof DealsRoute
+    }
   }
 }
 
+interface DealsRouteChildren {
+  DealsIdRoute: typeof DealsIdRoute
+}
+
+const DealsRouteChildren: DealsRouteChildren = {
+  DealsIdRoute: DealsIdRoute,
+}
+
+const DealsRouteWithChildren = DealsRoute._addFileChildren(DealsRouteChildren)
+
+interface PartnerRouteChildren {
+  PartnerRegisterRoute: typeof PartnerRegisterRoute
+}
+
+const PartnerRouteChildren: PartnerRouteChildren = {
+  PartnerRegisterRoute: PartnerRegisterRoute,
+}
+
+const PartnerRouteWithChildren =
+  PartnerRoute._addFileChildren(PartnerRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
+  AdvisorRoute: AdvisorRoute,
+  BrowseRoute: BrowseRoute,
+  DealsRoute: DealsRouteWithChildren,
+  HomeRoute: HomeRoute,
   LoginRoute: LoginRoute,
+  PartnerRoute: PartnerRouteWithChildren,
+  PostListingRoute: PostListingRoute,
+  PostRequirementRoute: PostRequirementRoute,
+  ProfileRoute: ProfileRoute,
   SignupRoute: SignupRoute,
+  ListingsIdRoute: ListingsIdRoute,
+  RequirementsIdRoute: RequirementsIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
