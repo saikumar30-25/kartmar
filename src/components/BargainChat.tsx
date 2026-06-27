@@ -1,13 +1,29 @@
 import { useEffect, useState } from "react";
 import { rupees } from "@/lib/format";
-import type { Listing } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sparkles } from "lucide-react";
 
+export type BargainListing = {
+  id: string;
+  productName: string;
+  unit: string;
+  quantity: number;
+  displayPrice: number;
+  acceptPrice: number;
+  floorPrice: number;
+  farmerName: string;
+};
+
 type Msg = { from: "buyer" | "ai"; text: string };
 
-export function BargainChat({ listing, onAccept }: { listing: Listing; onAccept: (price: number) => void }) {
+export function BargainChat({
+  listing,
+  onAccept,
+}: {
+  listing: BargainListing;
+  onAccept: (price: number) => void;
+}) {
   const [messages, setMessages] = useState<Msg[]>([
     {
       from: "ai",
@@ -18,7 +34,6 @@ export function BargainChat({ listing, onAccept }: { listing: Listing; onAccept:
   const [round, setRound] = useState(0);
   const [closed, setClosed] = useState(false);
 
-  // Simple deterministic negotiation
   const respondToOffer = (offerPaise: number): { text: string; offer?: number; done?: boolean } => {
     const { floorPrice, acceptPrice, displayPrice } = listing;
     if (offerPaise < floorPrice) {
@@ -31,7 +46,6 @@ export function BargainChat({ listing, onAccept }: { listing: Listing; onAccept:
     if (offerPaise >= acceptPrice) {
       return { text: `Done — ${rupees(offerPaise)}/${listing.unit} works. Confirming the deal now.`, offer: offerPaise, done: true };
     }
-    // counter
     const counter = Math.round(acceptPrice + (displayPrice - acceptPrice) * Math.max(0, 0.4 - round * 0.1));
     return {
       text: `That's close, but I'd need at least ${rupees(counter)}/${listing.unit}. Can you meet me there?`,
@@ -56,7 +70,7 @@ export function BargainChat({ listing, onAccept }: { listing: Listing; onAccept:
       if (round >= 4 && !reply.done) {
         setMessages((m) => [
           ...m,
-          { from: "ai", text: `That's my final offer at ${rupees(acceptPriceFor(listing))}/${listing.unit}. Tap accept to confirm.` },
+          { from: "ai", text: `That's my final offer at ${rupees(listing.acceptPrice)}/${listing.unit}. Tap accept to confirm.` },
         ]);
         setClosed(true);
       }
@@ -76,7 +90,7 @@ export function BargainChat({ listing, onAccept }: { listing: Listing; onAccept:
         </div>
         <div className="leading-tight">
           <p className="font-semibold text-sm">AgriBot Negotiator</p>
-          <p className="text-[10px] uppercase tracking-wider text-brand-moss">Negotiating on behalf of {listing.farmer.name}</p>
+          <p className="text-[10px] uppercase tracking-wider text-brand-moss">Negotiating on behalf of {listing.farmerName}</p>
         </div>
       </div>
 
@@ -111,8 +125,4 @@ export function BargainChat({ listing, onAccept }: { listing: Listing; onAccept:
       </div>
     </div>
   );
-}
-
-function acceptPriceFor(l: Listing) {
-  return l.acceptPrice;
 }

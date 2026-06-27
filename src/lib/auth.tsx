@@ -1,67 +1,106 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import type { Session, User } from "@supabase/supabase-js";
 
 export type Role = "farmer" | "owner" | "partner" | "admin";
 
-export type AuthUser = {
+export type Profile = {
   id: string;
   name: string;
-  email: string;
-  phone: string;
-  role: Role;
-  district: string;
-  state: string;
-  avatar?: string;
+  phone: string | null;
+  district: string | null;
+  state: string | null;
+  avatar_url: string | null;
   rating: number;
-  isVerified: boolean;
+  is_verified: boolean;
+};
+
+export type AuthUser = Profile & {
+  email: string;
+  role: Role;
 };
 
 type AuthCtx = {
   user: AuthUser | null;
-  signIn: (email: string) => void;
-  signOut: () => void;
-  setRole: (role: Role) => void;
+  session: Session | null;
+  loading: boolean;
+  signOut: () => Promise<void>;
+  setRole: (role: Role) => Promise<void>;
+  refresh: () => Promise<void>;
 };
 
 const Ctx = createContext<AuthCtx | null>(null);
-const KEY = "agriconnect.user";
 
-const demoUser: AuthUser = {
-  id: "u_demo",
-  name: "Ravi Kumar",
-  email: "ravi@example.com",
-  phone: "+91 98765 43210",
-  role: "farmer",
-  district: "Warangal",
-  state: "Telangana",
-  rating: 4.8,
-  isVerified: true,
-};
+async function fetchProfile(authUser: User): Promise<AuthUser | null> {
+  const [{ data: profile }, { data: roles }] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", authUser.id).maybeSingle(),
+    supabase.from("user_roles").select("role").eq("user_id", authUser.id),
+  ]);
+  if (!profile) return null;
+  const role = (roles?.[0]?.role as Role) ?? "farmer";
+  return {
+    id: profile.id,
+    name: profile.name,
+    phone: profile.phone,
+    district: profile.district,
+    state: profile.state,
+    avatar_url: profile.avatar_url,
+    rating: Number(profile.rating ?? 5),
+    is_verified: profile.is_verified,
+    email: authUser.email ?? "",
+    role,
+  };
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const hydrate = async (s: Session | null) => {
+    setSession(s);
+    if (!s?.user) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+    const p = await fetchProfile(s.user);
+    setUser(p);
+    setLoading(false);
+  };
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) setUser(JSON.parse(raw));
-    } catch {
-      /* ignore */
-    }
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
+      // Defer fetch to avoid potential deadlocks
+      setTimeout(() => void hydrate(s), 0);
+    });
+    supabase.auth.getSession().then(({ data }) => void hydrate(data.session));
+    return () => sub.subscription.unsubscribe();
   }, []);
 
-  const save = (u: AuthUser | null) => {
-    setUser(u);
-    if (u) localStorage.setItem(KEY, JSON.stringify(u));
-    else localStorage.removeItem(KEY);
+  const refresh = async () => {
+    const { data } = await supabase.auth.getSession();
+    await hydrate(data.session);
+  };
+
+  const setRole = async (role: Role) => {
+    if (!user) return;
+    await supabase.from("user_roles").delete().eq("user_id", user.id);
+    await supabase.from("user_roles").insert({ user_id: user.id, role });
+    setUser({ ...user, role });
   };
 
   return (
     <Ctx.Provider
       value={{
         user,
-        signIn: (email) => save({ ...demoUser, email, name: email.split("@")[0] || demoUser.name }),
-        signOut: () => save(null),
-        setRole: (role) => user && save({ ...user, role }),
+        session,
+        loading,
+        signOut: async () => {
+          await supabase.auth.signOut();
+        },
+        setRole,
+        refresh,
       }}
     >
       {children}

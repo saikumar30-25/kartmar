@@ -32,7 +32,7 @@ function Profile() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="font-serif italic text-3xl">{user.name}</h1>
-              {user.isVerified && (
+              {user.is_verified && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-brand-clay px-2 py-0.5 text-[10px] font-bold uppercase">
                   <BadgeCheck className="size-3" /> Verified
                 </span>

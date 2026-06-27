@@ -1,20 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { partnerStats, trips, deals } from "@/lib/mock-data";
 import { rupees } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { useState } from "react";
-import { Truck, MapPin, Phone, Check, IndianRupee, Star } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Truck, MapPin, Check, IndianRupee, Star, Loader2 } from "lucide-react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import {
+  useMyPartnerProfile, useTogglePartnerOnline, usePartnerTrips,
+  useAcceptTrip, useUpdateTripStatus, useRequireAuth,
+} from "@/lib/queries";
 
 export const Route = createFileRoute("/partner")({
   head: () => ({ meta: [{ title: "Partner dashboard — AgriConnect" }] }),
@@ -26,8 +24,66 @@ export const Route = createFileRoute("/partner")({
 });
 
 function Partner() {
-  const [online, setOnline] = useState(partnerStats.online);
-  const [request, setRequest] = useState(false);
+  const { user } = useRequireAuth();
+  const { data: profile, isLoading: loadingProfile } = useMyPartnerProfile();
+  const { data: trips = [], isLoading: loadingTrips } = usePartnerTrips();
+  const toggleOnline = useTogglePartnerOnline();
+  const acceptTrip = useAcceptTrip();
+  const updateStatus = useUpdateTripStatus();
+  const [seenOfferIds, setSeenOfferIds] = useState<Set<string>>(new Set());
+  const [activeOffer, setActiveOffer] = useState<string | null>(null);
+
+  const offered = useMemo(() => trips.filter((t) => t.status === "offered" && !t.partner_id), [trips]);
+  const mine = useMemo(() => trips.filter((t) => t.partner_id === user?.id), [trips, user]);
+
+  // Realtime new-offer notification toast
+  useEffect(() => {
+    if (!profile?.is_online) return;
+    offered.forEach((t) => {
+      if (!seenOfferIds.has(t.id)) {
+        toast.message("New booking request", {
+          description: `${t.pickup_district} → ${t.drop_district} · ${t.distance_km ?? 0}km`,
+          action: { label: "View", onClick: () => setActiveOffer(t.id) },
+        });
+      }
+    });
+    setSeenOfferIds(new Set(offered.map((t) => t.id)));
+  }, [offered, profile?.is_online]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const monthly = mine.filter((t) => t.status === "delivered");
+  const earnings = monthly.reduce((sum, t) => sum + Number(t.fare_paise), 0);
+  const activeOfferTrip = trips.find((t) => t.id === activeOffer);
+
+  if (loadingProfile) return <div className="py-20 grid place-items-center"><Loader2 className="size-6 animate-spin" /></div>;
+
+  if (!profile) {
+    return (
+      <div className="max-w-md mx-auto text-center py-16">
+        <Truck className="size-10 mx-auto text-brand-moss" />
+        <h1 className="font-serif italic text-3xl text-brand-green mt-3">Become a partner</h1>
+        <p className="text-sm text-muted-foreground mt-2">Register your vehicle to start accepting delivery trips.</p>
+        <Link to="/partner/register" className="mt-6 inline-block rounded-lg bg-brand-green text-brand-cream px-5 py-3 text-sm font-bold">
+          Register now
+        </Link>
+      </div>
+    );
+  }
+
+  const handleOnline = (v: boolean) => {
+    if (!user) return;
+    toggleOnline.mutate({ id: user.id, is_online: v });
+  };
+
+  const accept = async (tripId: string) => {
+    if (!user) return;
+    try {
+      await acceptTrip.mutateAsync({ id: tripId, partner_id: user.id });
+      toast.success("Trip accepted. Customer notified.");
+      setActiveOffer(null);
+    } catch (e: any) {
+      toast.error(e.message || "Already taken");
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -37,90 +93,112 @@ function Partner() {
           <h1 className="font-serif italic text-4xl text-brand-green mt-1">Driver dashboard</h1>
         </div>
         <label className="flex items-center gap-3 rounded-full bg-card ring-1 ring-border px-4 py-2">
-          <span className={`size-2.5 rounded-full ${online ? "bg-emerald-500" : "bg-stone-300"}`} />
-          <span className="text-sm font-semibold">{online ? "Online" : "Offline"}</span>
-          <Switch checked={online} onCheckedChange={setOnline} />
+          <span className={`size-2.5 rounded-full ${profile.is_online ? "bg-emerald-500" : "bg-stone-300"}`} />
+          <span className="text-sm font-semibold">{profile.is_online ? "Online" : "Offline"}</span>
+          <Switch checked={!!profile.is_online} onCheckedChange={handleOnline} />
         </label>
       </header>
 
       <section className="grid sm:grid-cols-3 gap-3">
-        <Stat icon={Truck} label="Trips this month" value={`${partnerStats.tripsThisMonth}`} />
-        <Stat icon={IndianRupee} label="Earnings" value={rupees(partnerStats.earningsPaise)} />
-        <Stat icon={Star} label="Rating" value={`${partnerStats.rating} ★`} />
-      </section>
-
-      <section className="rounded-3xl bg-brand-clay/10 ring-1 ring-brand-clay/20 p-5 flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-brand-clay">Demo</p>
-          <p className="font-semibold mt-1">Simulate an incoming booking request</p>
-        </div>
-        <Button onClick={() => setRequest(true)} className="bg-brand-clay text-white">
-          Trigger request
-        </Button>
+        <Stat icon={Truck} label="Delivered trips" value={`${monthly.length}`} />
+        <Stat icon={IndianRupee} label="Earnings" value={rupees(earnings)} />
+        <Stat icon={Star} label="Rating" value={`${Number(profile.rating ?? 5).toFixed(1)} ★`} />
       </section>
 
       <section>
-        <h2 className="font-serif italic text-2xl text-brand-green mb-4">Recent trips</h2>
-        <div className="rounded-2xl bg-card ring-1 ring-border divide-y divide-border overflow-hidden">
-          {trips.map((t) => {
-            const deal = deals.find((d) => d.id === t.dealId);
-            return (
-              <div key={t.id} className="p-4 flex items-center gap-4">
-                <div className="size-12 rounded-xl bg-brand-moss/15 text-brand-moss grid place-items-center">
-                  <Truck className="size-5" />
-                </div>
+        <h2 className="font-serif italic text-2xl text-brand-green mb-4">
+          Open requests {offered.length > 0 && <span className="text-sm text-brand-clay font-sans not-italic">({offered.length} live)</span>}
+        </h2>
+        {loadingTrips ? (
+          <div className="py-10 grid place-items-center"><Loader2 className="size-5 animate-spin" /></div>
+        ) : offered.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No open requests right now. {profile.is_online ? "We'll notify you instantly." : "Go online to receive requests."}</p>
+        ) : (
+          <div className="rounded-2xl bg-card ring-1 ring-border divide-y divide-border overflow-hidden">
+            {offered.map((t) => (
+              <button key={t.id} onClick={() => setActiveOffer(t.id)} className="w-full p-4 flex items-center gap-4 hover:bg-brand-cream/50 text-left">
+                <div className="size-12 rounded-xl bg-brand-clay/15 text-brand-clay grid place-items-center"><Truck className="size-5" /></div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm">{deal?.productName} · {t.weightKg}kg</p>
-                  <p className="text-xs text-muted-foreground">{t.pickup} → {t.delivery} · {t.distanceKm}km</p>
+                  <p className="font-semibold text-sm">{t.distance_km ?? 0}km · {t.pickup_district} → {t.drop_district}</p>
+                  <p className="text-xs text-muted-foreground">Posted {new Date(t.created_at).toLocaleTimeString()}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-sm text-rupee">{rupees(t.farePaise)}</p>
-                  <p className="text-[10px] text-muted-foreground capitalize">{t.status.replaceAll("_", " ")}</p>
+                  <p className="font-bold text-sm text-rupee">{rupees(Number(t.fare_paise))}</p>
+                  <p className="text-[10px] text-brand-clay font-bold uppercase">Accept →</p>
                 </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section>
+        <h2 className="font-serif italic text-2xl text-brand-green mb-4">My trips</h2>
+        {mine.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No trips yet.</p>
+        ) : (
+          <div className="rounded-2xl bg-card ring-1 ring-border divide-y divide-border overflow-hidden">
+            {mine.map((t) => (
+              <div key={t.id} className="p-4 flex items-center gap-4 flex-wrap">
+                <div className="size-12 rounded-xl bg-brand-moss/15 text-brand-moss grid place-items-center"><Truck className="size-5" /></div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm">{t.distance_km ?? 0}km · {t.pickup_district} → {t.drop_district}</p>
+                  <p className="text-xs text-muted-foreground capitalize">{t.status.replaceAll("_", " ")}</p>
+                </div>
+                <p className="font-bold text-sm text-rupee">{rupees(Number(t.fare_paise))}</p>
+                <NextActionButton tripId={t.id} status={t.status} onUpdate={(s) => updateStatus.mutate({ id: t.id, status: s })} pending={updateStatus.isPending} />
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="rounded-2xl bg-card ring-1 ring-border p-5">
         <p className="text-xs font-bold uppercase tracking-widest text-brand-moss">Verification</p>
-        <p className="mt-1 font-semibold">All documents verified</p>
-        <p className="text-xs text-muted-foreground mt-1">Driving license, RC, vehicle photo, Aadhaar</p>
+        <p className="mt-1 font-semibold">{profile.total_trips > 0 ? "All documents verified" : "Pending verification"}</p>
+        <p className="text-xs text-muted-foreground mt-1">Vehicle: {profile.vehicle_type} · {profile.vehicle_number ?? "—"}</p>
         <Link to="/partner/register" className="mt-3 inline-block text-xs font-bold text-brand-clay">Update documents →</Link>
       </section>
 
-      <Dialog open={request} onOpenChange={setRequest}>
+      <Dialog open={!!activeOfferTrip} onOpenChange={(o) => !o && setActiveOffer(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>New booking request</DialogTitle>
-            <DialogDescription>200kg tomatoes · 18km · 3 minutes to accept</DialogDescription>
+            <DialogDescription>
+              {activeOfferTrip && `$${activeOfferTrip.distance_km ?? 0}km trip`}
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3 text-sm">
-            <Row icon={MapPin} label="Pickup" value="Guntur farm, AP" />
-            <Row icon={MapPin} label="Delivery" value="FreshKart, Hyderabad" />
-            <Row icon={Phone} label="Farmer" value="Venkata Reddy · +91 98765…" />
-            <div className="rounded-xl bg-brand-cream p-3 flex justify-between">
-              <span className="text-xs text-muted-foreground">Estimated fare</span>
-              <span className="font-bold text-rupee">{rupees(480000)}</span>
+          {activeOfferTrip && (
+            <div className="space-y-3 text-sm">
+              <Row icon={MapPin} label="Pickup" value={activeOfferTrip.pickup_district} />
+              <Row icon={MapPin} label="Delivery" value={activeOfferTrip.drop_district} />
+              <div className="rounded-xl bg-brand-cream p-3 flex justify-between">
+                <span className="text-xs text-muted-foreground">Estimated fare</span>
+                <span className="font-bold text-rupee">{rupees(Number(activeOfferTrip.fare_paise))}</span>
+              </div>
             </div>
-          </div>
+          )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRequest(false)} className="flex-1">Reject</Button>
+            <Button variant="outline" onClick={() => setActiveOffer(null)} className="flex-1">Skip</Button>
             <Button
-              onClick={() => {
-                setRequest(false);
-                toast.success("Trip accepted. Customer notified.");
-              }}
+              onClick={() => activeOfferTrip && accept(activeOfferTrip.id)}
+              disabled={acceptTrip.isPending}
               className="flex-1 bg-brand-green text-brand-cream"
             >
-              <Check className="size-4 mr-1.5" /> Accept trip
+              <Check className="size-4 mr-1.5" /> {acceptTrip.isPending ? "Accepting…" : "Accept trip"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
   );
+}
+
+function NextActionButton({ status, onUpdate, pending }: { tripId: string; status: string; onUpdate: (s: any) => void; pending: boolean }) {
+  if (status === "accepted") return <Button size="sm" disabled={pending} onClick={() => onUpdate("picked_up")} className="bg-brand-clay text-white">Mark picked up</Button>;
+  if (status === "picked_up") return <Button size="sm" disabled={pending} onClick={() => onUpdate("in_transit")} className="bg-brand-clay text-white">Start trip</Button>;
+  if (status === "in_transit") return <Button size="sm" disabled={pending} onClick={() => onUpdate("delivered")} className="bg-brand-green text-brand-cream">Mark delivered</Button>;
+  return null;
 }
 
 function Stat({ icon: Icon, label, value }: { icon: typeof Truck; label: string; value: string }) {

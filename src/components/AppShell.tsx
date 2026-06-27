@@ -2,7 +2,7 @@ import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { Bell, Home, Search, MessageCircle, User, LogOut, Sprout, ShoppingBasket, Truck, Shield } from "lucide-react";
 import { useAuth, type Role } from "@/lib/auth";
 import { useState, type ReactNode } from "react";
-import { notifications } from "@/lib/mock-data";
+const notifications: Array<{ id: string; message: string; read: boolean }> = [];
 import {
   DropdownMenu,
   DropdownMenuContent,
