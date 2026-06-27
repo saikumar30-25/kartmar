@@ -34,7 +34,7 @@ export function useListings() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("listings")
-        .select("*, farmer:profiles!listings_farmer_id_fkey(id,name,district,state,rating)")
+        .select("*")
         .eq("status", "active")
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -47,13 +47,15 @@ export function useListing(id: string) {
   return useQuery({
     queryKey: ["listing", id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("listings")
-        .select("*, farmer:profiles!listings_farmer_id_fkey(id,name,district,state,rating,phone,is_verified)")
-        .eq("id", id)
-        .maybeSingle();
+      const { data, error } = await supabase.from("listings").select("*").eq("id", id).maybeSingle();
       if (error) throw error;
-      return data;
+      if (!data) return null;
+      const { data: farmer } = await supabase
+        .from("profiles")
+        .select("id,name,district,state,rating,phone,is_verified")
+        .eq("id", data.farmer_id)
+        .maybeSingle();
+      return { ...data, farmer };
     },
   });
 }
@@ -77,7 +79,7 @@ export function useRequirements() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("requirements")
-        .select("*, buyer:profiles!requirements_buyer_id_fkey(id,name,district,state,rating)")
+        .select("*")
         .eq("status", "open")
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -90,13 +92,15 @@ export function useRequirement(id: string) {
   return useQuery({
     queryKey: ["requirement", id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("requirements")
-        .select("*, buyer:profiles!requirements_buyer_id_fkey(id,name,district,state,rating,phone)")
-        .eq("id", id)
-        .maybeSingle();
+      const { data, error } = await supabase.from("requirements").select("*").eq("id", id).maybeSingle();
       if (error) throw error;
-      return data;
+      if (!data) return null;
+      const { data: buyer } = await supabase
+        .from("profiles")
+        .select("id,name,district,state,rating,phone")
+        .eq("id", data.buyer_id)
+        .maybeSingle();
+      return { ...data, buyer };
     },
   });
 }
