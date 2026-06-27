@@ -8,6 +8,16 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { useRegisterPartner, useMyPartnerProfile, useRequireAuth } from "@/lib/queries";
 
+type VehicleType = "bike" | "tempo" | "pickup" | "mini_truck" | "tractor";
+
+const VEHICLE_LABELS: Record<VehicleType, string> = {
+  bike: "Two-wheeler (≤30kg)",
+  tempo: "Three-wheeler / auto (≤300kg)",
+  pickup: "Small pickup (≤1000kg)",
+  mini_truck: "Mini truck (≤3000kg)",
+  tractor: "Tractor / large (3000kg+)",
+};
+
 export const Route = createFileRoute("/partner/register")({
   head: () => ({ meta: [{ title: "Driver registration — AgriConnect" }] }),
   component: () => (
@@ -23,12 +33,11 @@ function Reg() {
   const { data: existing } = useMyPartnerProfile();
   const register = useRegisterPartner();
 
-  const [vehicleType, setVehicleType] = useState(existing?.vehicle_type ?? "Small pickup (≤1000kg)");
+  const [vehicleType, setVehicleType] = useState<VehicleType>((existing?.vehicle_type as VehicleType) ?? "pickup");
   const [vehicleNumber, setVehicleNumber] = useState(existing?.vehicle_number ?? "");
   const [capacity, setCapacity] = useState(String(existing?.capacity_kg ?? ""));
-  const [license, setLicense] = useState(existing?.license_number ?? "");
-  const [districts, setDistricts] = useState((existing?.service_districts ?? []).join(", "));
-  const [upi, setUpi] = useState(existing?.upi_id ?? "");
+  const [district, setDistrict] = useState(existing?.district ?? "");
+  const [state, setState] = useState(existing?.state ?? "");
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,9 +48,8 @@ function Reg() {
         vehicle_type: vehicleType,
         vehicle_number: vehicleNumber,
         capacity_kg: Number(capacity),
-        license_number: license,
-        service_districts: districts.split(",").map((s) => s.trim()).filter(Boolean),
-        upi_id: upi,
+        district: district || null,
+        state: state || null,
       });
       toast.success("Submitted. We'll verify within 24 hours.");
       navigate({ to: "/partner" });
@@ -59,24 +67,22 @@ function Reg() {
         <Section title="Vehicle">
           <div className="grid sm:grid-cols-2 gap-3">
             <Field label="Vehicle type">
-              <select value={vehicleType} onChange={(e) => setVehicleType(e.target.value)} className="h-9 w-full rounded-md border border-input bg-card px-3 text-sm">
-                <option>Two-wheeler (bike, ≤30kg)</option>
-                <option>Three-wheeler / auto (≤300kg)</option>
-                <option>Small pickup (≤1000kg)</option>
-                <option>Medium truck (≤3000kg)</option>
-                <option>Large truck (3000kg+)</option>
+              <select value={vehicleType} onChange={(e) => setVehicleType(e.target.value as VehicleType)} className="h-9 w-full rounded-md border border-input bg-card px-3 text-sm">
+                {(Object.keys(VEHICLE_LABELS) as VehicleType[]).map((v) => (
+                  <option key={v} value={v}>{VEHICLE_LABELS[v]}</option>
+                ))}
               </select>
             </Field>
             <Field label="Registration number"><Input value={vehicleNumber} onChange={(e) => setVehicleNumber(e.target.value)} placeholder="TS 09 AB 1234" className="bg-card" required /></Field>
             <Field label="Capacity (kg)"><Input value={capacity} onChange={(e) => setCapacity(e.target.value)} type="number" placeholder="1000" className="bg-card" required /></Field>
-            <Field label="Driving license number"><Input value={license} onChange={(e) => setLicense(e.target.value)} placeholder="DLAP012345" className="bg-card" required /></Field>
           </div>
-          <Field label="Service districts (comma separated)">
-            <Input value={districts} onChange={(e) => setDistricts(e.target.value)} placeholder="Warangal, Hyderabad, Karimnagar" className="bg-card" required />
-          </Field>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <Field label="Base district"><Input value={district} onChange={(e) => setDistrict(e.target.value)} placeholder="Warangal" className="bg-card" /></Field>
+            <Field label="State"><Input value={state} onChange={(e) => setState(e.target.value)} placeholder="Telangana" className="bg-card" /></Field>
+          </div>
         </Section>
 
-        <Section title="Documents">
+        <Section title="Documents (coming soon)">
           <div className="grid grid-cols-2 gap-3">
             {["Driving license", "Vehicle RC", "Vehicle photo", "Aadhaar card"].map((doc) => (
               <button key={doc} type="button" className="aspect-[4/3] rounded-xl border-2 border-dashed border-border bg-brand-cream grid place-items-center text-center p-3 hover:border-brand-clay hover:text-brand-clay text-muted-foreground">
@@ -88,10 +94,6 @@ function Reg() {
               </button>
             ))}
           </div>
-        </Section>
-
-        <Section title="Payout">
-          <Field label="UPI ID"><Input value={upi} onChange={(e) => setUpi(e.target.value)} placeholder="yourname@upi" className="bg-card" required /></Field>
         </Section>
 
         <div className="flex gap-2">
