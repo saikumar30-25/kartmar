@@ -42,7 +42,7 @@ function Partner() {
     offered.forEach((t) => {
       if (!seenOfferIds.has(t.id)) {
         toast.message("New booking request", {
-          description: `${t.pickup_district} → ${t.drop_district} · ${t.distance_km}kg`,
+          description: `${t.pickup_district} → ${t.drop_district} · ${t.distance_km ?? 0}km`,
           action: { label: "View", onClick: () => setActiveOffer(t.id) },
         });
       }
@@ -119,7 +119,7 @@ function Partner() {
               <button key={t.id} onClick={() => setActiveOffer(t.id)} className="w-full p-4 flex items-center gap-4 hover:bg-brand-cream/50 text-left">
                 <div className="size-12 rounded-xl bg-brand-clay/15 text-brand-clay grid place-items-center"><Truck className="size-5" /></div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm">{t.distance_km}kg · {t.pickup_district} → {t.drop_district}</p>
+                  <p className="font-semibold text-sm">{t.distance_km ?? 0}km · {t.pickup_district} → {t.drop_district}</p>
                   <p className="text-xs text-muted-foreground">Posted {new Date(t.created_at).toLocaleTimeString()}</p>
                 </div>
                 <div className="text-right">
@@ -142,7 +142,7 @@ function Partner() {
               <div key={t.id} className="p-4 flex items-center gap-4 flex-wrap">
                 <div className="size-12 rounded-xl bg-brand-moss/15 text-brand-moss grid place-items-center"><Truck className="size-5" /></div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm">{t.distance_km}kg · {t.pickup_district} → {t.drop_district}</p>
+                  <p className="font-semibold text-sm">{t.distance_km ?? 0}km · {t.pickup_district} → {t.drop_district}</p>
                   <p className="text-xs text-muted-foreground capitalize">{t.status.replaceAll("_", " ")}</p>
                 </div>
                 <p className="font-bold text-sm text-rupee">{rupees(Number(t.fare_paise))}</p>
@@ -155,7 +155,7 @@ function Partner() {
 
       <section className="rounded-2xl bg-card ring-1 ring-border p-5">
         <p className="text-xs font-bold uppercase tracking-widest text-brand-moss">Verification</p>
-        <p className="mt-1 font-semibold">{profile.is_verified ? "All documents verified" : "Pending verification"}</p>
+        <p className="mt-1 font-semibold">{profile.total_trips > 0 ? "All documents verified" : "Pending verification"}</p>
         <p className="text-xs text-muted-foreground mt-1">Vehicle: {profile.vehicle_type} · {profile.vehicle_number ?? "—"}</p>
         <Link to="/partner/register" className="mt-3 inline-block text-xs font-bold text-brand-clay">Update documents →</Link>
       </section>
@@ -165,7 +165,7 @@ function Partner() {
           <DialogHeader>
             <DialogTitle>New booking request</DialogTitle>
             <DialogDescription>
-              {activeOfferTrip && `${activeOfferTrip.distance_km}kg shipment`}
+              {activeOfferTrip && `$${activeOfferTrip.distance_km ?? 0}km trip`}
             </DialogDescription>
           </DialogHeader>
           {activeOfferTrip && (
