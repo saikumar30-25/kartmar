@@ -42,7 +42,7 @@ function Partner() {
     offered.forEach((t) => {
       if (!seenOfferIds.has(t.id)) {
         toast.message("New booking request", {
-          description: `${t.pickup_district} → ${t.drop_district} · ${t.weight_kg}kg`,
+          description: `${t.pickup_district} → ${t.drop_district} · ${t.distance_km}kg`,
           action: { label: "View", onClick: () => setActiveOffer(t.id) },
         });
       }
@@ -119,7 +119,7 @@ function Partner() {
               <button key={t.id} onClick={() => setActiveOffer(t.id)} className="w-full p-4 flex items-center gap-4 hover:bg-brand-cream/50 text-left">
                 <div className="size-12 rounded-xl bg-brand-clay/15 text-brand-clay grid place-items-center"><Truck className="size-5" /></div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm">{t.weight_kg}kg · {t.pickup_district} → {t.drop_district}</p>
+                  <p className="font-semibold text-sm">{t.distance_km}kg · {t.pickup_district} → {t.drop_district}</p>
                   <p className="text-xs text-muted-foreground">Posted {new Date(t.created_at).toLocaleTimeString()}</p>
                 </div>
                 <div className="text-right">
@@ -142,7 +142,7 @@ function Partner() {
               <div key={t.id} className="p-4 flex items-center gap-4 flex-wrap">
                 <div className="size-12 rounded-xl bg-brand-moss/15 text-brand-moss grid place-items-center"><Truck className="size-5" /></div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm">{t.weight_kg}kg · {t.pickup_district} → {t.drop_district}</p>
+                  <p className="font-semibold text-sm">{t.distance_km}kg · {t.pickup_district} → {t.drop_district}</p>
                   <p className="text-xs text-muted-foreground capitalize">{t.status.replaceAll("_", " ")}</p>
                 </div>
                 <p className="font-bold text-sm text-rupee">{rupees(Number(t.fare_paise))}</p>
@@ -165,7 +165,7 @@ function Partner() {
           <DialogHeader>
             <DialogTitle>New booking request</DialogTitle>
             <DialogDescription>
-              {activeOfferTrip && `${activeOfferTrip.weight_kg}kg shipment`}
+              {activeOfferTrip && `${activeOfferTrip.distance_km}kg shipment`}
             </DialogDescription>
           </DialogHeader>
           {activeOfferTrip && (
