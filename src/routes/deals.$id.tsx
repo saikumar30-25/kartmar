@@ -81,7 +81,7 @@ function Detail() {
         deal_id: deal.id,
         pickup_district: deal.pickup_district ?? "",
         drop_district: deal.drop_district ?? "",
-        weight_kg: Number(deal.quantity),
+        distance_km: Number(deal.quantity),
         fare_paise: Math.max(50000, Math.round(Number(deal.total_paise) * 0.05)),
         status: "offered",
       });
@@ -179,7 +179,7 @@ function Detail() {
             <>
               <p className="text-sm font-semibold">{trip.pickup_district} → {trip.drop_district}</p>
               <p className="text-xs text-muted-foreground mt-1">
-                {trip.weight_kg}kg · Fare {rupees(Number(trip.fare_paise))} · <span className="capitalize">{trip.status.replaceAll("_", " ")}</span>
+                {trip.distance_km}kg · Fare {rupees(Number(trip.fare_paise))} · <span className="capitalize">{trip.status.replaceAll("_", " ")}</span>
               </p>
               {trip.status === "offered" && <p className="mt-2 text-xs text-brand-clay">Waiting for a driver to accept…</p>}
             </>
