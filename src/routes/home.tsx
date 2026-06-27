@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { ProductCard } from "@/components/ProductCard";
 import { useAuth } from "@/lib/auth";
-import { listings, requirements, deals, demandForecast, partnerStats } from "@/lib/mock-data";
+import { useListings, useRequirements, useMyDeals, useRequireAuth } from "@/lib/queries";
 import { rupees } from "@/lib/format";
 import { Sparkles, TrendingUp, IndianRupee, Star, Package, Plus, MessageSquare } from "lucide-react";
 
@@ -16,10 +16,18 @@ export const Route = createFileRoute("/home")({
 });
 
 function Home() {
+  useRequireAuth();
   const { user } = useAuth();
+  const { data: listings = [] } = useListings();
+  const { data: requirements = [] } = useRequirements();
+  const { data: deals = [] } = useMyDeals();
+
   if (!user) return null;
 
   const greeting = `${new Date().getHours() < 12 ? "Good morning" : "Good evening"}, ${user.name.split(" ")[0]}`;
+  const earnings = deals
+    .filter((d) => d.farmer_id === user.id && (d.status === "delivered" || d.status === "completed"))
+    .reduce((sum, d) => sum + Number(d.total_paise), 0);
 
   return (
     <div className="space-y-8">
@@ -31,8 +39,8 @@ function Home() {
       </header>
 
       <section className="grid sm:grid-cols-3 gap-4">
-        <Stat icon={Package} label="Active deals" value="08" tone="moss" />
-        <Stat icon={IndianRupee} label="Earnings this month" value={rupees(partnerStats.earningsPaise)} tone="green" />
+        <Stat icon={Package} label="Active deals" value={String(deals.filter((d) => d.status !== "completed" && d.status !== "cancelled").length).padStart(2, "0")} tone="moss" />
+        <Stat icon={IndianRupee} label="Earnings (delivered)" value={rupees(earnings)} tone="green" />
         <Stat icon={Star} label="Rating" value={`${user.rating} ★`} tone="clay" />
       </section>
 
@@ -49,17 +57,14 @@ function Home() {
                 : "Onion arrivals dropping in Nasik — hold stock 4 days for ~₹4/kg gain."}
             </h2>
             <div className="mt-4 flex flex-wrap gap-3">
-              {demandForecast.map((d) => (
-                <span key={d.product} className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium ring-1 ring-white/15 inline-flex items-center gap-1.5">
-                  <TrendingUp className="size-3" /> {d.product}
+              {["Tomatoes ↑", "Chillies ↑", "Onions →"].map((d) => (
+                <span key={d} className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium ring-1 ring-white/15 inline-flex items-center gap-1.5">
+                  <TrendingUp className="size-3" /> {d}
                 </span>
               ))}
             </div>
           </div>
-          <Link
-            to="/advisor"
-            className="rounded-xl bg-brand-cream text-brand-green px-4 py-2.5 text-sm font-bold inline-flex items-center gap-2"
-          >
+          <Link to="/advisor" className="rounded-xl bg-brand-cream text-brand-green px-4 py-2.5 text-sm font-bold inline-flex items-center gap-2">
             <MessageSquare className="size-4" /> Ask AgriAdvisor
           </Link>
         </div>
@@ -71,20 +76,24 @@ function Home() {
             <h2 className="font-serif italic text-2xl text-brand-green">
               {user.role === "owner" ? "Fresh listings nearby" : "Buyer requirements near you"}
             </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">Within 50km of {user.district}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">From {user.district ?? "your area"}</p>
           </div>
           <Link to="/browse" className="text-xs font-bold text-brand-clay uppercase tracking-wider">View all →</Link>
         </div>
 
         {user.role === "owner" ? (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {listings.slice(0, 3).map((l) => (
-              <ProductCard key={l.id} listing={l} />
-            ))}
-          </div>
+          listings.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No listings yet.</p>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {listings.slice(0, 3).map((l) => <ProductCard key={l.id} listing={l} />)}
+            </div>
+          )
+        ) : requirements.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No requirements posted yet.</p>
         ) : (
           <div className="grid sm:grid-cols-2 gap-4">
-            {requirements.map((r) => (
+            {requirements.slice(0, 4).map((r) => (
               <Link
                 key={r.id}
                 to="/requirements/$id"
@@ -94,36 +103,24 @@ function Home() {
                 <div className="flex justify-between items-start gap-3">
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-widest text-brand-clay">Wanted</p>
-                    <h3 className="mt-1 font-semibold text-lg">{r.quantity}{r.unit} {r.productName}</h3>
-                    <p className="text-xs text-muted-foreground mt-1">{r.buyer.name} · {r.buyer.business}</p>
+                    <h3 className="mt-1 font-semibold text-lg">{Number(r.quantity)}{r.unit} {r.product_name}</h3>
+                    <p className="text-xs text-muted-foreground mt-1">{r.district}, {r.state}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xl font-bold text-brand-green text-rupee">{rupees(r.offerPrice)}</p>
+                    <p className="text-xl font-bold text-brand-green text-rupee">{r.target_price_paise ? rupees(Number(r.target_price_paise)) : "—"}</p>
                     <p className="text-[10px] text-muted-foreground">per {r.unit}</p>
                   </div>
                 </div>
-                <p className="mt-3 text-sm text-muted-foreground line-clamp-2">{r.description}</p>
-                <div className="mt-4 flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">{r.distanceKm}km away · needed in 2 days</span>
-                  <span className="font-bold text-brand-clay">Bargain →</span>
-                </div>
+                {r.notes && <p className="mt-3 text-sm text-muted-foreground line-clamp-2">{r.notes}</p>}
               </Link>
             ))}
           </div>
         )}
       </section>
 
-      {user.role === "farmer" && (
+      {(user.role === "farmer" || user.role === "owner") && (
         <Link
-          to="/post-listing"
-          className="fixed bottom-24 right-6 lg:bottom-8 size-14 rounded-full bg-brand-clay text-white grid place-items-center shadow-xl shadow-brand-clay/30 hover:scale-105 transition z-30"
-        >
-          <Plus className="size-6" />
-        </Link>
-      )}
-      {user.role === "owner" && (
-        <Link
-          to="/post-requirement"
+          to={user.role === "farmer" ? "/post-listing" : "/post-requirement"}
           className="fixed bottom-24 right-6 lg:bottom-8 size-14 rounded-full bg-brand-clay text-white grid place-items-center shadow-xl shadow-brand-clay/30 hover:scale-105 transition z-30"
         >
           <Plus className="size-6" />
@@ -132,21 +129,25 @@ function Home() {
 
       <section>
         <h2 className="font-serif italic text-2xl text-brand-green mb-4">Recent deals</h2>
-        <div className="rounded-2xl bg-card ring-1 ring-border divide-y divide-border overflow-hidden">
-          {deals.map((d) => (
-            <Link key={d.id} to="/deals/$id" params={{ id: d.id }} className="flex items-center gap-4 p-4 hover:bg-brand-cream/50">
-              <img src={d.photo} alt="" className="size-12 rounded-lg object-cover" />
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm truncate">{d.quantity}{d.unit} {d.productName}</p>
-                <p className="text-xs text-muted-foreground">{d.farmerName} → {d.buyerName}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm font-bold text-rupee">{rupees(d.totalPaise)}</p>
-                <DealStatus status={d.status} />
-              </div>
-            </Link>
-          ))}
-        </div>
+        {deals.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No deals yet.</p>
+        ) : (
+          <div className="rounded-2xl bg-card ring-1 ring-border divide-y divide-border overflow-hidden">
+            {deals.slice(0, 5).map((d) => (
+              <Link key={d.id} to="/deals/$id" params={{ id: d.id }} className="flex items-center gap-4 p-4 hover:bg-brand-cream/50">
+                {d.photo_url ? <img src={d.photo_url} alt="" className="size-12 rounded-lg object-cover" /> : <div className="size-12 rounded-lg bg-brand-moss/15" />}
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm truncate">{Number(d.quantity)}{d.unit} {d.product_name}</p>
+                  <p className="text-xs text-muted-foreground">{new Date(d.created_at).toLocaleDateString()}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold text-rupee">{rupees(Number(d.total_paise))}</p>
+                  <DealStatus status={d.status} />
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );
@@ -171,13 +172,14 @@ function Stat({ icon: Icon, label, value, tone }: { icon: typeof Package; label:
 
 export function DealStatus({ status }: { status: string }) {
   const map: Record<string, { label: string; cls: string }> = {
-    confirmed: { label: "Confirmed", cls: "bg-stone-100 text-stone-700" },
+    pending_payment: { label: "Pending payment", cls: "bg-stone-100 text-stone-700" },
     paid: { label: "Paid · escrow", cls: "bg-amber-100 text-amber-800" },
     in_transit: { label: "In transit", cls: "bg-blue-100 text-blue-800" },
     delivered: { label: "Delivered", cls: "bg-emerald-100 text-emerald-800" },
     completed: { label: "Completed", cls: "bg-emerald-100 text-emerald-800" },
     disputed: { label: "Disputed", cls: "bg-red-100 text-red-800" },
+    cancelled: { label: "Cancelled", cls: "bg-stone-100 text-stone-500" },
   };
-  const s = map[status] ?? map.confirmed;
+  const s = map[status] ?? map.pending_payment;
   return <span className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${s.cls}`}>{s.label}</span>;
 }
