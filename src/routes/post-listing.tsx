@@ -39,7 +39,7 @@ function PostListing() {
     if (!user) return;
     const floorRupees = Number(floor);
     const displayRupees = simple ? Math.round(floorRupees * 1.3) : Number(display);
-    const acceptRupees = simple ? Math.round((displayRupees + floorRupees) / 2) : Number(accept);
+    void accept;
     try {
       await createListing.mutateAsync({
         farmer_id: user.id,
@@ -49,7 +49,7 @@ function PostListing() {
         unit,
         quality_grade: grade,
         price_paise: displayRupees * 100,
-        accept_price_paise: acceptRupees * 100,
+        // accept price not persisted in schema; AI bargain uses display + min
         min_price_paise: floorRupees * 100,
         description: description || null,
         district: user.district ?? "",

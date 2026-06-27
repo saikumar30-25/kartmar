@@ -38,14 +38,14 @@ function Post() {
         product_name: productName,
         quantity: Number(quantity),
         unit,
-        required_by: requiredBy || null,
+        needed_by: requiredBy || null,
         notes: notes || null,
         target_price_paise: offer ? Number(offer) * 100 : null,
-        max_price_paise: ceiling ? Number(ceiling) * 100 : null,
         district: user.district ?? "",
         state: user.state ?? "",
         status: "open",
       });
+      void ceiling;
       toast.success("Requirement posted. Matching farmers will be alerted.");
       navigate({ to: "/home" });
     } catch (err: any) {

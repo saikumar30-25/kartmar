@@ -76,7 +76,7 @@ function Detail() {
             <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
               <Calendar className="size-3" /> Needed by
             </div>
-            <p className="mt-1 font-semibold">{req.required_by ?? "Flexible"}</p>
+            <p className="mt-1 font-semibold">{req.needed_by ?? "Flexible"}</p>
           </div>
           <div className="rounded-xl bg-brand-cream/60 ring-1 ring-border p-3">
             <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
