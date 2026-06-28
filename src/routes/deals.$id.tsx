@@ -7,7 +7,7 @@ import {
 import { rupees } from "@/lib/format";
 import { DealStatus } from "./home";
 import { Button } from "@/components/ui/button";
-import { Check, Truck, IndianRupee, AlertTriangle, Star, Send, Loader2 } from "lucide-react";
+import { Check, Truck, IndianRupee, AlertTriangle, Star, Send, Loader2, MessageSquare, Phone } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -195,6 +195,10 @@ function Detail() {
           )}
         </div>
       </section>
+
+      <ContactCard deal={deal} trip={trip} viewerId={user?.id} />
+
+
 
       <section className="mt-6 flex flex-wrap gap-3">
         {deal.status === "delivered" && isBuyer && (
