@@ -3,6 +3,7 @@ import { Bell, Home, Search, MessageCircle, User, LogOut, Sprout, ShoppingBasket
 import { useAuth, type Role } from "@/lib/auth";
 import { useState, type ReactNode } from "react";
 const notifications: Array<{ id: string; message: string; read: boolean }> = [];
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,7 +21,7 @@ const roleLabels: Record<Role, { label: string; icon: typeof Sprout }> = {
 };
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { user, signOut, setRole } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [openNotif, setOpenNotif] = useState(false);
@@ -68,33 +69,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
 
             <div className="flex items-center gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger className="hidden sm:flex items-center gap-2 rounded-full bg-card px-3 py-1.5 text-xs font-semibold ring-1 ring-border hover:ring-brand-moss/40">
-                  <RoleIcon className="size-3.5 text-brand-clay" />
-                  {roleLabels[currentRole].label}
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel className="text-xs">Switch role (demo)</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {(Object.keys(roleLabels) as Role[]).map((r) => {
-                    const Icon = roleLabels[r].icon;
-                    return (
-                      <DropdownMenuItem
-                        key={r}
-                        onClick={() => {
-                          setRole(r);
-                          if (r === "partner") navigate({ to: "/partner" });
-                          else if (r === "admin") navigate({ to: "/admin" });
-                          else navigate({ to: "/home" });
-                        }}
-                      >
-                        <Icon className="size-3.5 mr-2 text-brand-clay" />
-                        {roleLabels[r].label}
-                      </DropdownMenuItem>
-                    );
-                  })}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="hidden sm:flex items-center gap-2 rounded-full bg-card px-3 py-1.5 text-xs font-semibold ring-1 ring-border">
+                <RoleIcon className="size-3.5 text-brand-clay" />
+                {roleLabels[currentRole].label}
+              </div>
+
 
               <DropdownMenu open={openNotif} onOpenChange={setOpenNotif}>
                 <DropdownMenuTrigger className="relative size-9 grid place-items-center rounded-full bg-card ring-1 ring-border hover:ring-brand-moss/40">
