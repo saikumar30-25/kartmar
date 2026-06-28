@@ -302,3 +302,63 @@ function Detail() {
     </div>
   );
 }
+
+type Contact = { id: string; name: string; phone: string | null } | null | undefined;
+
+function ContactCard({
+  deal,
+  trip,
+  viewerId,
+}: {
+  deal: { farmer: Contact; buyer: Contact; product_name: string };
+  trip: { partner: Contact } | null | undefined;
+  viewerId: string | undefined;
+}) {
+  const others: Array<{ role: string; contact: Contact }> = [];
+  if (deal.farmer && deal.farmer.id !== viewerId) others.push({ role: "Farmer", contact: deal.farmer });
+  if (deal.buyer && deal.buyer.id !== viewerId) others.push({ role: "Buyer", contact: deal.buyer });
+  if (trip?.partner && trip.partner.id !== viewerId) others.push({ role: "Delivery partner", contact: trip.partner });
+
+  if (others.length === 0) return null;
+
+  return (
+    <section className="mt-6 rounded-2xl bg-card ring-1 ring-border p-5">
+      <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
+        <MessageSquare className="size-4 text-emerald-600" /> Direct contacts
+      </h3>
+      <div className="grid sm:grid-cols-2 gap-3">
+        {others.map(({ role, contact }) => {
+          if (!contact) return null;
+          const digits = (contact.phone ?? "").replace(/\D/g, "");
+          const waMsg = encodeURIComponent(`Hi ${contact.name}, regarding our AgriConnect deal for ${deal.product_name}.`);
+          return (
+            <div key={contact.id} className="rounded-xl bg-brand-cream/60 ring-1 ring-border p-3">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{role}</p>
+              <p className="mt-0.5 font-semibold">{contact.name}</p>
+              {digits ? (
+                <div className="mt-2 flex gap-2">
+                  <a
+                    href={`https://wa.me/${digits}?text=${waMsg}`}
+                    target="_blank" rel="noreferrer"
+                    className="flex-1 text-center rounded-lg bg-emerald-600 text-white py-1.5 text-xs font-bold"
+                  >
+                    <MessageSquare className="size-3.5 inline mr-1" /> WhatsApp
+                  </a>
+                  <a
+                    href={`tel:${contact.phone}`}
+                    className="rounded-lg ring-1 ring-border bg-card px-3 py-1.5 text-xs font-bold"
+                  >
+                    <Phone className="size-3.5 inline" />
+                  </a>
+                </div>
+              ) : (
+                <p className="mt-2 text-xs text-muted-foreground">No phone on file</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
