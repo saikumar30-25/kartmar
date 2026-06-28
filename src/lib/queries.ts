@@ -145,10 +145,16 @@ export function useDeal(id: string) {
     queryFn: async () => {
       const { data, error } = await supabase.from("deals").select("*").eq("id", id).maybeSingle();
       if (error) throw error;
-      return data;
+      if (!data) return null;
+      const [{ data: farmer }, { data: buyer }] = await Promise.all([
+        supabase.from("profiles").select("id,name,phone,district,state,rating").eq("id", data.farmer_id).maybeSingle(),
+        supabase.from("profiles").select("id,name,phone,district,state,rating").eq("id", data.buyer_id).maybeSingle(),
+      ]);
+      return { ...data, farmer, buyer };
     },
   });
 }
+
 
 export function useCreateDeal() {
   const qc = useQueryClient();
