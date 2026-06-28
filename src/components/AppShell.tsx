@@ -30,7 +30,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="min-h-screen grid place-items-center bg-brand-cream">
         <div className="text-center">
           <p className="text-muted-foreground mb-4">Please sign in to continue</p>
-          <Link to="/login" className="rounded-lg bg-brand-green text-brand-cream px-4 py-2 text-sm font-semibold">
+          <Link to="/auth" className="rounded-lg bg-brand-green text-brand-cream px-4 py-2 text-sm font-semibold">
             Sign in
           </Link>
         </div>

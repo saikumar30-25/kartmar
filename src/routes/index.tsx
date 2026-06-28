@@ -26,11 +26,11 @@ function Landing() {
             <span className="font-serif italic text-xl text-brand-green">AgriConnect</span>
           </Link>
           <div className="flex items-center gap-3">
-            <Link to="/login" className="text-sm font-semibold text-brand-green hover:text-brand-clay">
+            <Link to="/auth" className="text-sm font-semibold text-brand-green hover:text-brand-clay">
               Sign in
             </Link>
             <Link
-              to="/signup"
+              to="/auth"
               className="rounded-lg bg-brand-green text-brand-cream px-4 py-2 text-sm font-semibold hover:bg-brand-green/90"
             >
               Get started
@@ -55,13 +55,13 @@ function Landing() {
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link
-                to="/signup"
+                to="/auth"
                 className="rounded-xl bg-brand-clay text-white px-5 py-3 text-sm font-bold shadow-lg shadow-brand-clay/20 hover:bg-brand-clay/90"
               >
                 Sell my produce
               </Link>
               <Link
-                to="/signup"
+                to="/auth"
                 className="rounded-xl bg-card ring-1 ring-border px-5 py-3 text-sm font-bold hover:ring-brand-moss/40"
               >
                 Buy from farmers
@@ -120,7 +120,7 @@ function Landing() {
         </div>
         <div className="mt-12 text-center">
           <Link
-            to="/signup"
+            to="/auth"
             className="inline-flex items-center justify-center rounded-xl bg-brand-green text-brand-cream px-6 py-3 text-sm font-bold hover:bg-brand-green/90"
           >
             Create your account
