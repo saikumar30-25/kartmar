@@ -346,8 +346,19 @@ export function useTripForDeal(dealId: string | undefined) {
         .eq("deal_id", dealId)
         .maybeSingle();
       if (error) throw error;
-      return data;
+      if (!data) return null;
+      let partner = null;
+      if (data.partner_id) {
+        const { data: p } = await supabase
+          .from("profiles")
+          .select("id,name,phone")
+          .eq("id", data.partner_id)
+          .maybeSingle();
+        partner = p;
+      }
+      return { ...data, partner };
     },
+
     enabled: !!dealId,
   });
 
