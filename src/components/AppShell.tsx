@@ -38,7 +38,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     );
   }
 
-  const RoleIcon = roleLabels[user.role].icon;
+  const currentRole: Role = user.role ?? "farmer";
+  const RoleIcon = roleLabels[currentRole].icon;
+
   const unread = notifications.filter((n) => !n.read).length;
 
   const tabs = [
@@ -69,7 +71,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <DropdownMenu>
                 <DropdownMenuTrigger className="hidden sm:flex items-center gap-2 rounded-full bg-card px-3 py-1.5 text-xs font-semibold ring-1 ring-border hover:ring-brand-moss/40">
                   <RoleIcon className="size-3.5 text-brand-clay" />
-                  {roleLabels[user.role].label}
+                  {roleLabels[currentRole].label}
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel className="text-xs">Switch role (demo)</DropdownMenuLabel>
