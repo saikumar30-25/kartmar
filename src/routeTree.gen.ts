@@ -9,15 +9,15 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SignupRouteImport } from './routes/signup'
+import { Route as SelectRoleRouteImport } from './routes/select-role'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PostRequirementRouteImport } from './routes/post-requirement'
 import { Route as PostListingRouteImport } from './routes/post-listing'
 import { Route as PartnerRouteImport } from './routes/partner'
-import { Route as LoginRouteImport } from './routes/login'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as DealsRouteImport } from './routes/deals'
 import { Route as BrowseRouteImport } from './routes/browse'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdvisorRouteImport } from './routes/advisor'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -26,9 +26,9 @@ import { Route as PartnerRegisterRouteImport } from './routes/partner.register'
 import { Route as ListingsIdRouteImport } from './routes/listings.$id'
 import { Route as DealsIdRouteImport } from './routes/deals.$id'
 
-const SignupRoute = SignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
+const SelectRoleRoute = SelectRoleRouteImport.update({
+  id: '/select-role',
+  path: '/select-role',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -51,11 +51,6 @@ const PartnerRoute = PartnerRouteImport.update({
   path: '/partner',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const HomeRoute = HomeRouteImport.update({
   id: '/home',
   path: '/home',
@@ -69,6 +64,11 @@ const DealsRoute = DealsRouteImport.update({
 const BrowseRoute = BrowseRouteImport.update({
   id: '/browse',
   path: '/browse',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdvisorRoute = AdvisorRouteImport.update({
@@ -111,15 +111,15 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/advisor': typeof AdvisorRoute
+  '/auth': typeof AuthRoute
   '/browse': typeof BrowseRoute
   '/deals': typeof DealsRouteWithChildren
   '/home': typeof HomeRoute
-  '/login': typeof LoginRoute
   '/partner': typeof PartnerRouteWithChildren
   '/post-listing': typeof PostListingRoute
   '/post-requirement': typeof PostRequirementRoute
   '/profile': typeof ProfileRoute
-  '/signup': typeof SignupRoute
+  '/select-role': typeof SelectRoleRoute
   '/deals/$id': typeof DealsIdRoute
   '/listings/$id': typeof ListingsIdRoute
   '/partner/register': typeof PartnerRegisterRoute
@@ -129,15 +129,15 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/advisor': typeof AdvisorRoute
+  '/auth': typeof AuthRoute
   '/browse': typeof BrowseRoute
   '/deals': typeof DealsRouteWithChildren
   '/home': typeof HomeRoute
-  '/login': typeof LoginRoute
   '/partner': typeof PartnerRouteWithChildren
   '/post-listing': typeof PostListingRoute
   '/post-requirement': typeof PostRequirementRoute
   '/profile': typeof ProfileRoute
-  '/signup': typeof SignupRoute
+  '/select-role': typeof SelectRoleRoute
   '/deals/$id': typeof DealsIdRoute
   '/listings/$id': typeof ListingsIdRoute
   '/partner/register': typeof PartnerRegisterRoute
@@ -148,15 +148,15 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/advisor': typeof AdvisorRoute
+  '/auth': typeof AuthRoute
   '/browse': typeof BrowseRoute
   '/deals': typeof DealsRouteWithChildren
   '/home': typeof HomeRoute
-  '/login': typeof LoginRoute
   '/partner': typeof PartnerRouteWithChildren
   '/post-listing': typeof PostListingRoute
   '/post-requirement': typeof PostRequirementRoute
   '/profile': typeof ProfileRoute
-  '/signup': typeof SignupRoute
+  '/select-role': typeof SelectRoleRoute
   '/deals/$id': typeof DealsIdRoute
   '/listings/$id': typeof ListingsIdRoute
   '/partner/register': typeof PartnerRegisterRoute
@@ -168,15 +168,15 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/advisor'
+    | '/auth'
     | '/browse'
     | '/deals'
     | '/home'
-    | '/login'
     | '/partner'
     | '/post-listing'
     | '/post-requirement'
     | '/profile'
-    | '/signup'
+    | '/select-role'
     | '/deals/$id'
     | '/listings/$id'
     | '/partner/register'
@@ -186,15 +186,15 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/advisor'
+    | '/auth'
     | '/browse'
     | '/deals'
     | '/home'
-    | '/login'
     | '/partner'
     | '/post-listing'
     | '/post-requirement'
     | '/profile'
-    | '/signup'
+    | '/select-role'
     | '/deals/$id'
     | '/listings/$id'
     | '/partner/register'
@@ -204,15 +204,15 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/advisor'
+    | '/auth'
     | '/browse'
     | '/deals'
     | '/home'
-    | '/login'
     | '/partner'
     | '/post-listing'
     | '/post-requirement'
     | '/profile'
-    | '/signup'
+    | '/select-role'
     | '/deals/$id'
     | '/listings/$id'
     | '/partner/register'
@@ -223,26 +223,26 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   AdvisorRoute: typeof AdvisorRoute
+  AuthRoute: typeof AuthRoute
   BrowseRoute: typeof BrowseRoute
   DealsRoute: typeof DealsRouteWithChildren
   HomeRoute: typeof HomeRoute
-  LoginRoute: typeof LoginRoute
   PartnerRoute: typeof PartnerRouteWithChildren
   PostListingRoute: typeof PostListingRoute
   PostRequirementRoute: typeof PostRequirementRoute
   ProfileRoute: typeof ProfileRoute
-  SignupRoute: typeof SignupRoute
+  SelectRoleRoute: typeof SelectRoleRoute
   ListingsIdRoute: typeof ListingsIdRoute
   RequirementsIdRoute: typeof RequirementsIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/signup': {
-      id: '/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof SignupRouteImport
+    '/select-role': {
+      id: '/select-role'
+      path: '/select-role'
+      fullPath: '/select-role'
+      preLoaderRoute: typeof SelectRoleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -273,13 +273,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PartnerRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/home': {
       id: '/home'
       path: '/home'
@@ -299,6 +292,13 @@ declare module '@tanstack/react-router' {
       path: '/browse'
       fullPath: '/browse'
       preLoaderRoute: typeof BrowseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/advisor': {
@@ -378,15 +378,15 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AdvisorRoute: AdvisorRoute,
+  AuthRoute: AuthRoute,
   BrowseRoute: BrowseRoute,
   DealsRoute: DealsRouteWithChildren,
   HomeRoute: HomeRoute,
-  LoginRoute: LoginRoute,
   PartnerRoute: PartnerRouteWithChildren,
   PostListingRoute: PostListingRoute,
   PostRequirementRoute: PostRequirementRoute,
   ProfileRoute: ProfileRoute,
-  SignupRoute: SignupRoute,
+  SelectRoleRoute: SelectRoleRoute,
   ListingsIdRoute: ListingsIdRoute,
   RequirementsIdRoute: RequirementsIdRoute,
 }

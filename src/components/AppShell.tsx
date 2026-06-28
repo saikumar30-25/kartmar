@@ -3,6 +3,7 @@ import { Bell, Home, Search, MessageCircle, User, LogOut, Sprout, ShoppingBasket
 import { useAuth, type Role } from "@/lib/auth";
 import { useState, type ReactNode } from "react";
 const notifications: Array<{ id: string; message: string; read: boolean }> = [];
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,7 +21,7 @@ const roleLabels: Record<Role, { label: string; icon: typeof Sprout }> = {
 };
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { user, signOut, setRole } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [openNotif, setOpenNotif] = useState(false);
@@ -30,7 +31,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="min-h-screen grid place-items-center bg-brand-cream">
         <div className="text-center">
           <p className="text-muted-foreground mb-4">Please sign in to continue</p>
-          <Link to="/login" className="rounded-lg bg-brand-green text-brand-cream px-4 py-2 text-sm font-semibold">
+          <Link to="/auth" className="rounded-lg bg-brand-green text-brand-cream px-4 py-2 text-sm font-semibold">
             Sign in
           </Link>
         </div>
@@ -38,7 +39,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     );
   }
 
-  const RoleIcon = roleLabels[user.role].icon;
+  const currentRole: Role = user.role ?? "farmer";
+  const RoleIcon = roleLabels[currentRole].icon;
+
   const unread = notifications.filter((n) => !n.read).length;
 
   const tabs = [
@@ -66,33 +69,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
 
             <div className="flex items-center gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger className="hidden sm:flex items-center gap-2 rounded-full bg-card px-3 py-1.5 text-xs font-semibold ring-1 ring-border hover:ring-brand-moss/40">
-                  <RoleIcon className="size-3.5 text-brand-clay" />
-                  {roleLabels[user.role].label}
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel className="text-xs">Switch role (demo)</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {(Object.keys(roleLabels) as Role[]).map((r) => {
-                    const Icon = roleLabels[r].icon;
-                    return (
-                      <DropdownMenuItem
-                        key={r}
-                        onClick={() => {
-                          setRole(r);
-                          if (r === "partner") navigate({ to: "/partner" });
-                          else if (r === "admin") navigate({ to: "/admin" });
-                          else navigate({ to: "/home" });
-                        }}
-                      >
-                        <Icon className="size-3.5 mr-2 text-brand-clay" />
-                        {roleLabels[r].label}
-                      </DropdownMenuItem>
-                    );
-                  })}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="hidden sm:flex items-center gap-2 rounded-full bg-card px-3 py-1.5 text-xs font-semibold ring-1 ring-border">
+                <RoleIcon className="size-3.5 text-brand-clay" />
+                {roleLabels[currentRole].label}
+              </div>
+
 
               <DropdownMenu open={openNotif} onOpenChange={setOpenNotif}>
                 <DropdownMenuTrigger className="relative size-9 grid place-items-center rounded-full bg-card ring-1 ring-border hover:ring-brand-moss/40">

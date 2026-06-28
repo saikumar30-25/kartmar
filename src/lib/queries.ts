@@ -22,8 +22,11 @@ export function useRequireAuth() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   useEffect(() => {
-    if (!loading && !user) navigate({ to: "/login" });
+    if (loading) return;
+    if (!user) navigate({ to: "/auth" });
+    else if (!user.role) navigate({ to: "/select-role" });
   }, [loading, user, navigate]);
+
   return { user, loading };
 }
 
@@ -142,10 +145,16 @@ export function useDeal(id: string) {
     queryFn: async () => {
       const { data, error } = await supabase.from("deals").select("*").eq("id", id).maybeSingle();
       if (error) throw error;
-      return data;
+      if (!data) return null;
+      const [{ data: farmer }, { data: buyer }] = await Promise.all([
+        supabase.from("profiles").select("id,name,phone,district,state,rating").eq("id", data.farmer_id).maybeSingle(),
+        supabase.from("profiles").select("id,name,phone,district,state,rating").eq("id", data.buyer_id).maybeSingle(),
+      ]);
+      return { ...data, farmer, buyer };
     },
   });
 }
+
 
 export function useCreateDeal() {
   const qc = useQueryClient();
@@ -337,8 +346,19 @@ export function useTripForDeal(dealId: string | undefined) {
         .eq("deal_id", dealId)
         .maybeSingle();
       if (error) throw error;
-      return data;
+      if (!data) return null;
+      let partner = null;
+      if (data.partner_id) {
+        const { data: p } = await supabase
+          .from("profiles")
+          .select("id,name,phone")
+          .eq("id", data.partner_id)
+          .maybeSingle();
+        partner = p;
+      }
+      return { ...data, partner };
     },
+
     enabled: !!dealId,
   });
 

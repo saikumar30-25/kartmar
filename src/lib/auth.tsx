@@ -17,8 +17,9 @@ export type Profile = {
 
 export type AuthUser = Profile & {
   email: string;
-  role: Role;
+  role: Role | null;
 };
+
 
 type AuthCtx = {
   user: AuthUser | null;
@@ -37,7 +38,8 @@ async function fetchProfile(authUser: User): Promise<AuthUser | null> {
     supabase.from("user_roles").select("role").eq("user_id", authUser.id),
   ]);
   if (!profile) return null;
-  const role = (roles?.[0]?.role as Role) ?? "farmer";
+  const role = (roles?.[0]?.role as Role | undefined) ?? null;
+
   return {
     id: profile.id,
     name: profile.name,
