@@ -195,7 +195,7 @@ function Partner() {
           <DialogHeader>
             <DialogTitle>New booking request</DialogTitle>
             <DialogDescription>
-              {activeOfferTrip && `$${activeOfferTrip.distance_km ?? 0}km trip`}
+              {activeOfferTrip && `${activeOfferTrip.distance_km ?? 0}km trip · ${activeOfferTrip.pickup_district} → ${activeOfferTrip.drop_district}`}
             </DialogDescription>
           </DialogHeader>
           {activeOfferTrip && (

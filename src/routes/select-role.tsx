@@ -41,9 +41,10 @@ function SelectRole() {
 
     if (existing) {
       setBusy(null);
+      const roleNames: Record<string, string> = { farmer: "Farmer", owner: "Market Owner", partner: "Delivery Partner", admin: "Admin" };
       toast.error(
-        `Your Google account is already registered as ${existing.role}. One email can hold only one role — please sign in with a different Google account to use AgriConnect as a ${role}.`,
-        { duration: 7000 },
+        `This Google account (${user.email}) is already registered as a ${roleNames[existing.role] ?? existing.role}. One Google account = one role. To use AgriConnect as a ${roleNames[role]}, sign out and sign in with a different Gmail.`,
+        { duration: 9000 },
       );
       return;
     }
