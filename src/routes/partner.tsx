@@ -183,9 +183,11 @@ function Partner() {
 
       <section className="rounded-2xl bg-card ring-1 ring-border p-5">
         <p className="text-xs font-bold uppercase tracking-widest text-brand-moss">Verification</p>
-        <p className="mt-1 font-semibold">{profile.total_trips > 0 ? "All documents verified" : "Pending verification"}</p>
+        <p className="mt-1 font-extrabold capitalize">
+          Status: <span className={isApproved ? "text-brand-green" : isRejected ? "text-destructive" : "text-brand-clay"}>{profile.verification_status}</span>
+        </p>
         <p className="text-xs text-muted-foreground mt-1">Vehicle: {profile.vehicle_type} · {profile.vehicle_number ?? "—"}</p>
-        <Link to="/partner/register" className="mt-3 inline-block text-xs font-bold text-brand-clay">Update documents →</Link>
+        <Link to="/partner/register" className="mt-3 inline-block text-xs font-extrabold text-brand-clay">Update documents →</Link>
       </section>
 
       <Dialog open={!!activeOfferTrip} onOpenChange={(o) => !o && setActiveOffer(null)}>
