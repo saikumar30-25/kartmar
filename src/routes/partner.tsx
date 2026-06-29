@@ -59,23 +59,35 @@ function Partner() {
   if (!profile) {
     return (
       <div className="max-w-md mx-auto text-center py-16">
-        <Truck className="size-10 mx-auto text-brand-moss" />
-        <h1 className="font-serif italic text-3xl text-brand-green mt-3">Become a partner</h1>
+        <Truck className="size-10 mx-auto text-brand-clay" />
+        <h1 className="text-3xl font-extrabold mt-3">Become a partner</h1>
         <p className="text-sm text-muted-foreground mt-2">Register your vehicle to start accepting delivery trips.</p>
-        <Link to="/partner/register" className="mt-6 inline-block rounded-lg bg-brand-green text-brand-cream px-5 py-3 text-sm font-bold">
+        <Link to="/partner/register" className="mt-6 inline-block rounded-xl gradient-accent text-white px-5 py-3 text-sm font-extrabold shadow-bold">
           Register now
         </Link>
       </div>
     );
   }
 
+  const isApproved = profile.verification_status === "approved";
+  const isRejected = profile.verification_status === "rejected";
+
+
   const handleOnline = (v: boolean) => {
     if (!user) return;
+    if (!isApproved) {
+      toast.error("You can go online only after admin approves your documents.");
+      return;
+    }
     toggleOnline.mutate({ id: user.id, is_online: v });
   };
 
   const accept = async (tripId: string) => {
     if (!user) return;
+    if (!isApproved) {
+      toast.error("Your account is awaiting verification. You'll be able to accept trips after approval.");
+      return;
+    }
     try {
       await acceptTrip.mutateAsync({ id: tripId, partner_id: user.id });
       toast.success("Trip accepted. Customer notified.");
@@ -98,6 +110,22 @@ function Partner() {
           <Switch checked={!!profile.is_online} onCheckedChange={handleOnline} />
         </label>
       </header>
+
+      {!isApproved && (
+        <div className={`rounded-2xl p-5 ring-1 ${isRejected ? "bg-destructive/10 ring-destructive/30 text-destructive" : "bg-brand-clay/10 ring-brand-clay/30 text-brand-clay"}`}>
+          <p className="font-extrabold text-sm">
+            {isRejected ? "Verification rejected" : "Awaiting admin approval"}
+          </p>
+          <p className="text-xs mt-1 text-foreground/80">
+            {isRejected
+              ? (profile.rejection_reason || "Your documents were rejected. Please re-upload and resubmit.")
+              : "Your documents have been submitted. You'll be able to go online and accept trips once an admin approves them (usually within 24 hours)."}
+          </p>
+          <Link to="/partner/register" className="inline-block mt-3 text-xs font-extrabold underline">
+            {isRejected ? "Resubmit documents →" : "Edit documents →"}
+          </Link>
+        </div>
+      )}
 
       <section className="grid sm:grid-cols-3 gap-3">
         <Stat icon={Truck} label="Delivered trips" value={`${monthly.length}`} />
@@ -155,9 +183,11 @@ function Partner() {
 
       <section className="rounded-2xl bg-card ring-1 ring-border p-5">
         <p className="text-xs font-bold uppercase tracking-widest text-brand-moss">Verification</p>
-        <p className="mt-1 font-semibold">{profile.total_trips > 0 ? "All documents verified" : "Pending verification"}</p>
+        <p className="mt-1 font-extrabold capitalize">
+          Status: <span className={isApproved ? "text-brand-green" : isRejected ? "text-destructive" : "text-brand-clay"}>{profile.verification_status}</span>
+        </p>
         <p className="text-xs text-muted-foreground mt-1">Vehicle: {profile.vehicle_type} · {profile.vehicle_number ?? "—"}</p>
-        <Link to="/partner/register" className="mt-3 inline-block text-xs font-bold text-brand-clay">Update documents →</Link>
+        <Link to="/partner/register" className="mt-3 inline-block text-xs font-extrabold text-brand-clay">Update documents →</Link>
       </section>
 
       <Dialog open={!!activeOfferTrip} onOpenChange={(o) => !o && setActiveOffer(null)}>
@@ -165,7 +195,7 @@ function Partner() {
           <DialogHeader>
             <DialogTitle>New booking request</DialogTitle>
             <DialogDescription>
-              {activeOfferTrip && `$${activeOfferTrip.distance_km ?? 0}km trip`}
+              {activeOfferTrip && `${activeOfferTrip.distance_km ?? 0}km trip · ${activeOfferTrip.pickup_district} → ${activeOfferTrip.drop_district}`}
             </DialogDescription>
           </DialogHeader>
           {activeOfferTrip && (

@@ -16,6 +16,62 @@ export type TripRow = Database["public"]["Tables"]["trips"]["Row"];
 export type TripInsert = Database["public"]["Tables"]["trips"]["Insert"];
 export type PartnerProfileRow = Database["public"]["Tables"]["partner_profiles"]["Row"];
 export type PartnerProfileInsert = Database["public"]["Tables"]["partner_profiles"]["Insert"];
+export type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
+
+// ---------- Profile editing ----------
+export function useUpdateProfile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: ProfileUpdate }) => {
+      const { data, error } = await supabase.from("profiles").update(patch).eq("id", id).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["partner_profile"] });
+    },
+  });
+}
+
+// ---------- Admin: partner verification ----------
+export function useAllPartners() {
+  return useQuery({
+    queryKey: ["admin_partners"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("partner_profiles")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      if (!data || data.length === 0) return [];
+      const ids = data.map((p) => p.id);
+      const { data: profs } = await supabase.from("profiles").select("id,name,phone,district,state").in("id", ids);
+      const map = new Map((profs ?? []).map((p) => [p.id, p]));
+      return data.map((p) => ({ ...p, profile: map.get(p.id) ?? null }));
+    },
+  });
+}
+
+export function useReviewPartner() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, status, reason }: { id: string; status: "approved" | "rejected"; reason?: string }) => {
+      const { error } = await supabase
+        .from("partner_profiles")
+        .update({
+          verification_status: status,
+          rejection_reason: reason ?? null,
+          reviewed_at: new Date().toISOString(),
+        })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin_partners"] });
+      qc.invalidateQueries({ queryKey: ["partner_profile"] });
+    },
+  });
+}
 
 // ---------- Auth gate ----------
 export function useRequireAuth() {
