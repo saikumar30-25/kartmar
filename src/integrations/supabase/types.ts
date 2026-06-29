@@ -202,12 +202,18 @@ export type Database = {
           id: string
           is_online: boolean
           license_doc_url: string | null
+          license_photo_url: string | null
           rating: number
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           state: string | null
           total_trips: number
           updated_at: string
           vehicle_number: string
+          vehicle_photo_url: string | null
           vehicle_type: Database["public"]["Enums"]["vehicle_type"]
+          verification_status: Database["public"]["Enums"]["verification_status"]
         }
         Insert: {
           capacity_kg?: number
@@ -217,12 +223,18 @@ export type Database = {
           id: string
           is_online?: boolean
           license_doc_url?: string | null
+          license_photo_url?: string | null
           rating?: number
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           state?: string | null
           total_trips?: number
           updated_at?: string
           vehicle_number: string
+          vehicle_photo_url?: string | null
           vehicle_type: Database["public"]["Enums"]["vehicle_type"]
+          verification_status?: Database["public"]["Enums"]["verification_status"]
         }
         Update: {
           capacity_kg?: number
@@ -232,12 +244,18 @@ export type Database = {
           id?: string
           is_online?: boolean
           license_doc_url?: string | null
+          license_photo_url?: string | null
           rating?: number
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           state?: string | null
           total_trips?: number
           updated_at?: string
           vehicle_number?: string
+          vehicle_photo_url?: string | null
           vehicle_type?: Database["public"]["Enums"]["vehicle_type"]
+          verification_status?: Database["public"]["Enums"]["verification_status"]
         }
         Relationships: []
       }
@@ -420,6 +438,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_approved_partner: { Args: { _user_id: string }; Returns: boolean }
       is_partner: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
@@ -443,6 +462,7 @@ export type Database = {
         | "delivered"
         | "cancelled"
       vehicle_type: "mini_truck" | "tempo" | "pickup" | "tractor" | "bike"
+      verification_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -592,6 +612,7 @@ export const Constants = {
         "cancelled",
       ],
       vehicle_type: ["mini_truck", "tempo", "pickup", "tractor", "bike"],
+      verification_status: ["pending", "approved", "rejected"],
     },
   },
 } as const
