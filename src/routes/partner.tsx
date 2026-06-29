@@ -72,10 +72,6 @@ function Partner() {
   const isApproved = profile.verification_status === "approved";
   const isRejected = profile.verification_status === "rejected";
 
-  const handleOnline = (v: boolean) => {
-    if (!user) return;
-    toggleOnline.mutate({ id: user.id, is_online: v });
-  };
 
   const handleOnline = (v: boolean) => {
     if (!user) return;
