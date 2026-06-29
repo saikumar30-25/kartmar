@@ -59,23 +59,39 @@ function Partner() {
   if (!profile) {
     return (
       <div className="max-w-md mx-auto text-center py-16">
-        <Truck className="size-10 mx-auto text-brand-moss" />
-        <h1 className="font-serif italic text-3xl text-brand-green mt-3">Become a partner</h1>
+        <Truck className="size-10 mx-auto text-brand-clay" />
+        <h1 className="text-3xl font-extrabold mt-3">Become a partner</h1>
         <p className="text-sm text-muted-foreground mt-2">Register your vehicle to start accepting delivery trips.</p>
-        <Link to="/partner/register" className="mt-6 inline-block rounded-lg bg-brand-green text-brand-cream px-5 py-3 text-sm font-bold">
+        <Link to="/partner/register" className="mt-6 inline-block rounded-xl gradient-accent text-white px-5 py-3 text-sm font-extrabold shadow-bold">
           Register now
         </Link>
       </div>
     );
   }
 
+  const isApproved = profile.verification_status === "approved";
+  const isRejected = profile.verification_status === "rejected";
+
   const handleOnline = (v: boolean) => {
     if (!user) return;
     toggleOnline.mutate({ id: user.id, is_online: v });
   };
 
+  const handleOnline = (v: boolean) => {
+    if (!user) return;
+    if (!isApproved) {
+      toast.error("You can go online only after admin approves your documents.");
+      return;
+    }
+    toggleOnline.mutate({ id: user.id, is_online: v });
+  };
+
   const accept = async (tripId: string) => {
     if (!user) return;
+    if (!isApproved) {
+      toast.error("Your account is awaiting verification. You'll be able to accept trips after approval.");
+      return;
+    }
     try {
       await acceptTrip.mutateAsync({ id: tripId, partner_id: user.id });
       toast.success("Trip accepted. Customer notified.");
