@@ -124,6 +124,71 @@ export type Database = {
           },
         ]
       }
+      interest_requests: {
+        Row: {
+          buyer_address: string
+          buyer_id: string
+          buyer_name: string
+          buyer_phone: string | null
+          buyer_pincode: string | null
+          created_at: string
+          farmer_id: string
+          farmer_response: string | null
+          id: string
+          listing_id: string
+          message: string
+          offer_price_paise: number | null
+          quantity: number | null
+          responded_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          buyer_address: string
+          buyer_id: string
+          buyer_name: string
+          buyer_phone?: string | null
+          buyer_pincode?: string | null
+          created_at?: string
+          farmer_id: string
+          farmer_response?: string | null
+          id?: string
+          listing_id: string
+          message: string
+          offer_price_paise?: number | null
+          quantity?: number | null
+          responded_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          buyer_address?: string
+          buyer_id?: string
+          buyer_name?: string
+          buyer_phone?: string | null
+          buyer_pincode?: string | null
+          created_at?: string
+          farmer_id?: string
+          farmer_response?: string | null
+          id?: string
+          listing_id?: string
+          message?: string
+          offer_price_paise?: number | null
+          quantity?: number | null
+          responded_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interest_requests_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listings: {
         Row: {
           available_until: string | null
@@ -197,6 +262,7 @@ export type Database = {
         Row: {
           capacity_kg: number
           created_at: string
+          details_completed: boolean
           district: string | null
           earnings_paise: number
           id: string
@@ -218,6 +284,7 @@ export type Database = {
         Insert: {
           capacity_kg?: number
           created_at?: string
+          details_completed?: boolean
           district?: string | null
           earnings_paise?: number
           id: string
@@ -239,6 +306,7 @@ export type Database = {
         Update: {
           capacity_kg?: number
           created_at?: string
+          details_completed?: boolean
           district?: string | null
           earnings_paise?: number
           id?: string
@@ -261,40 +329,55 @@ export type Database = {
       }
       profiles: {
         Row: {
+          aadhaar_last4: string | null
+          address: string | null
           avatar_url: string | null
           created_at: string
+          details_completed: boolean
           district: string | null
           id: string
           is_verified: boolean
+          language: string
           languages: string[]
           name: string
           phone: string | null
+          pincode: string | null
           rating: number
           state: string | null
           updated_at: string
         }
         Insert: {
+          aadhaar_last4?: string | null
+          address?: string | null
           avatar_url?: string | null
           created_at?: string
+          details_completed?: boolean
           district?: string | null
           id: string
           is_verified?: boolean
+          language?: string
           languages?: string[]
           name?: string
           phone?: string | null
+          pincode?: string | null
           rating?: number
           state?: string | null
           updated_at?: string
         }
         Update: {
+          aadhaar_last4?: string | null
+          address?: string | null
           avatar_url?: string | null
           created_at?: string
+          details_completed?: boolean
           district?: string | null
           id?: string
           is_verified?: boolean
+          language?: string
           languages?: string[]
           name?: string
           phone?: string | null
+          pincode?: string | null
           rating?: number
           state?: string | null
           updated_at?: string
