@@ -49,9 +49,12 @@ async function fetchProfile(authUser: User): Promise<AuthUser | null> {
     phone: profile.phone,
     district: profile.district,
     state: profile.state,
+    address: profile.address ?? null,
+    pincode: profile.pincode ?? null,
     avatar_url: profile.avatar_url,
     rating: Number(profile.rating ?? 5),
     is_verified: profile.is_verified,
+    details_completed: profile.details_completed ?? false,
     email: authUser.email ?? "",
     role,
   };
