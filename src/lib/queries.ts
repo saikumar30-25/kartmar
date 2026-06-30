@@ -81,6 +81,7 @@ export function useRequireAuth() {
     if (loading) return;
     if (!user) navigate({ to: "/auth" });
     else if (!user.role) navigate({ to: "/select-role" });
+    else if (!user.details_completed) navigate({ to: "/onboarding" });
   }, [loading, user, navigate]);
 
   return { user, loading };

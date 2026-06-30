@@ -63,7 +63,7 @@ function SelectRole() {
 
     await refresh();
     toast.success(`You're set up as a ${role}.`);
-    navigate({ to: role === "partner" ? "/partner/register" : "/home" });
+    navigate({ to: "/onboarding" });
   };
 
   if (loading || !user) {
