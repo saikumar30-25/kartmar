@@ -10,9 +10,12 @@ export type Profile = {
   phone: string | null;
   district: string | null;
   state: string | null;
+  address: string | null;
+  pincode: string | null;
   avatar_url: string | null;
   rating: number;
   is_verified: boolean;
+  details_completed: boolean;
 };
 
 export type AuthUser = Profile & {
