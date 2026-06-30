@@ -14,6 +14,7 @@ import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PostRequirementRouteImport } from './routes/post-requirement'
 import { Route as PostListingRouteImport } from './routes/post-listing'
 import { Route as PartnerRouteImport } from './routes/partner'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as DealsRouteImport } from './routes/deals'
 import { Route as BrowseRouteImport } from './routes/browse'
@@ -49,6 +50,11 @@ const PostListingRoute = PostListingRouteImport.update({
 const PartnerRoute = PartnerRouteImport.update({
   id: '/partner',
   path: '/partner',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HomeRoute = HomeRouteImport.update({
@@ -115,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/browse': typeof BrowseRoute
   '/deals': typeof DealsRouteWithChildren
   '/home': typeof HomeRoute
+  '/onboarding': typeof OnboardingRoute
   '/partner': typeof PartnerRouteWithChildren
   '/post-listing': typeof PostListingRoute
   '/post-requirement': typeof PostRequirementRoute
@@ -133,6 +140,7 @@ export interface FileRoutesByTo {
   '/browse': typeof BrowseRoute
   '/deals': typeof DealsRouteWithChildren
   '/home': typeof HomeRoute
+  '/onboarding': typeof OnboardingRoute
   '/partner': typeof PartnerRouteWithChildren
   '/post-listing': typeof PostListingRoute
   '/post-requirement': typeof PostRequirementRoute
@@ -152,6 +160,7 @@ export interface FileRoutesById {
   '/browse': typeof BrowseRoute
   '/deals': typeof DealsRouteWithChildren
   '/home': typeof HomeRoute
+  '/onboarding': typeof OnboardingRoute
   '/partner': typeof PartnerRouteWithChildren
   '/post-listing': typeof PostListingRoute
   '/post-requirement': typeof PostRequirementRoute
@@ -172,6 +181,7 @@ export interface FileRouteTypes {
     | '/browse'
     | '/deals'
     | '/home'
+    | '/onboarding'
     | '/partner'
     | '/post-listing'
     | '/post-requirement'
@@ -190,6 +200,7 @@ export interface FileRouteTypes {
     | '/browse'
     | '/deals'
     | '/home'
+    | '/onboarding'
     | '/partner'
     | '/post-listing'
     | '/post-requirement'
@@ -208,6 +219,7 @@ export interface FileRouteTypes {
     | '/browse'
     | '/deals'
     | '/home'
+    | '/onboarding'
     | '/partner'
     | '/post-listing'
     | '/post-requirement'
@@ -227,6 +239,7 @@ export interface RootRouteChildren {
   BrowseRoute: typeof BrowseRoute
   DealsRoute: typeof DealsRouteWithChildren
   HomeRoute: typeof HomeRoute
+  OnboardingRoute: typeof OnboardingRoute
   PartnerRoute: typeof PartnerRouteWithChildren
   PostListingRoute: typeof PostListingRoute
   PostRequirementRoute: typeof PostRequirementRoute
@@ -271,6 +284,13 @@ declare module '@tanstack/react-router' {
       path: '/partner'
       fullPath: '/partner'
       preLoaderRoute: typeof PartnerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/home': {
@@ -382,6 +402,7 @@ const rootRouteChildren: RootRouteChildren = {
   BrowseRoute: BrowseRoute,
   DealsRoute: DealsRouteWithChildren,
   HomeRoute: HomeRoute,
+  OnboardingRoute: OnboardingRoute,
   PartnerRoute: PartnerRouteWithChildren,
   PostListingRoute: PostListingRoute,
   PostRequirementRoute: PostRequirementRoute,
