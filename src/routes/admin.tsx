@@ -16,11 +16,19 @@ export const Route = createFileRoute("/admin")({
 });
 
 function Admin() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const { data: partners = [], isLoading } = useAllPartners();
   const review = useReviewPartner();
 
-  if (user && user.role !== "admin") {
+  if (loading || !user) {
+    return (
+      <div className="max-w-md mx-auto text-center py-16">
+        <Loader2 className="size-6 mx-auto animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (user.role !== "admin") {
     return (
       <div className="max-w-md mx-auto text-center py-16">
         <Shield className="size-10 mx-auto text-brand-clay" />
@@ -29,6 +37,7 @@ function Admin() {
       </div>
     );
   }
+
 
   const pending = partners.filter((p) => p.verification_status === "pending");
   const approved = partners.filter((p) => p.verification_status === "approved");
