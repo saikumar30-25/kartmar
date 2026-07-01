@@ -78,6 +78,17 @@ function SelectRole() {
   return (
     <div className="min-h-screen grid place-items-center bg-brand-cream p-6">
       <div className="w-full max-w-2xl">
+        <div className="flex justify-center gap-1 mb-4">
+          {(["en", "hi", "te"] as Lang[]).map((l) => (
+            <button
+              key={l}
+              onClick={() => setLang(l)}
+              className={`px-3 py-1 text-xs font-bold uppercase tracking-widest rounded-full ${lang === l ? "bg-brand-green text-brand-cream" : "bg-card ring-1 ring-border text-muted-foreground"}`}
+            >
+              {l === "en" ? "EN" : l === "hi" ? "हिं" : "తె"}
+            </button>
+          ))}
+        </div>
         <p className="text-center text-xs uppercase tracking-widest text-brand-moss">Welcome, {user.name}</p>
         <h1 className="mt-2 font-serif italic text-4xl text-brand-green text-center">What brings you here?</h1>
         <p className="text-center text-sm text-muted-foreground mt-2">
