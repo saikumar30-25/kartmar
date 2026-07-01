@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Bell, Home, Search, MessageCircle, User, LogOut, Sprout, ShoppingBasket, Truck, Shield } from "lucide-react";
+import { Bell, Home, Search, MessageCircle, User, LogOut, Sprout, ShoppingBasket, Truck, Shield, HandHeart } from "lucide-react";
 import { useAuth, type Role } from "@/lib/auth";
 import { useState, type ReactNode } from "react";
 const notifications: Array<{ id: string; message: string; read: boolean }> = [];
