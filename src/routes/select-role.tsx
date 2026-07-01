@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Sprout, ShoppingBasket, Truck, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { getDict, getRoleName, type Lang } from "@/lib/i18n";
 
 export const Route = createFileRoute("/select-role")({
   head: () => ({ meta: [{ title: "Pick your role — AgriConnect" }] }),
