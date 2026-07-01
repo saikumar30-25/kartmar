@@ -31,6 +31,7 @@ function Partner() {
   const toggleOnline = useTogglePartnerOnline();
   const acceptTrip = useAcceptTrip();
   const updateStatus = useUpdateTripStatus();
+  const { t } = useI18n();
   const [seenOfferIds, setSeenOfferIds] = useState<Set<string>>(new Set());
   const [activeOffer, setActiveOffer] = useState<string | null>(null);
 
