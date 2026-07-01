@@ -76,6 +76,33 @@ function Detail() {
     }
   };
 
+  const sendInterest = async () => {
+    if (!user) return;
+    if (!user.address || !user.phone) {
+      toast.error("Please add your address and phone in Profile before sending interest.");
+      return;
+    }
+    try {
+      await createInterest.mutateAsync({
+        listing_id: listing.id,
+        farmer_id: listing.farmer_id,
+        buyer_id: user.id,
+        buyer_name: user.name,
+        buyer_phone: user.phone,
+        buyer_address: user.address,
+        buyer_pincode: user.pincode,
+        message: iMsg || `Hi, I'm interested in your ${listing.product_name}.`,
+        quantity: iQty ? Number(iQty) : null,
+        offer_price_paise: iOffer ? Math.round(Number(iOffer) * 100) : null,
+      });
+      toast.success("Interest sent to farmer. You'll be notified when they respond.");
+      setInterestOpen(false);
+      setIMsg(""); setIQty(""); setIOffer("");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to send");
+    }
+  };
+
   return (
     <div className="grid lg:grid-cols-2 gap-8">
       <div>
