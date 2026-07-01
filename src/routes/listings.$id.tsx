@@ -224,6 +224,33 @@ function Detail() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <Dialog open={interestOpen} onOpenChange={setInterestOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="font-serif italic text-2xl text-brand-green">Send interest to farmer</DialogTitle>
+              <DialogDescription>
+                Your name, phone and address will be shared with {farmer?.name ?? "the farmer"} so they can decide whether to sell.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="rounded-lg bg-brand-cream/60 p-3 text-xs">
+                <p><strong>{user?.name}</strong> · {user?.phone ?? "no phone"}</p>
+                <p className="text-muted-foreground mt-0.5">{user?.address ?? "No address on file"}{user?.pincode ? ` — ${user.pincode}` : ""}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Input placeholder={`Quantity (${listing.unit})`} value={iQty} onChange={(e) => setIQty(e.target.value)} type="number" />
+                <Input placeholder={`Your offer ₹/${listing.unit}`} value={iOffer} onChange={(e) => setIOffer(e.target.value)} type="number" />
+              </div>
+              <Textarea placeholder="Message to farmer (optional)" value={iMsg} onChange={(e) => setIMsg(e.target.value)} rows={3} />
+            </div>
+            <DialogFooter>
+              <Button onClick={sendInterest} disabled={createInterest.isPending} className="w-full bg-brand-green text-brand-cream">
+                {createInterest.isPending ? "Sending…" : "Send interest"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
