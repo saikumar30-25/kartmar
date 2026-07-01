@@ -22,6 +22,8 @@ function SelectRole() {
   const { user, loading, refresh, signOut } = useAuth();
   const navigate = useNavigate();
   const [busy, setBusy] = useState<Role | null>(null);
+  const [lang, setLang] = useState<Lang>("en");
+  const t = getDict(lang);
 
   useEffect(() => {
     if (loading) return;
