@@ -163,12 +163,24 @@ function Detail() {
         {listing.description && <p className="mt-6 text-sm text-muted-foreground leading-relaxed">{listing.description}</p>}
 
         {!bargaining && !confirmedPrice && user?.id !== listing.farmer_id && (
-          <Button
-            onClick={() => setBargaining(true)}
-            className="mt-8 w-full h-14 text-base bg-brand-clay hover:bg-brand-clay/90 text-white font-bold shadow-lg shadow-brand-clay/20"
-          >
-            <Sparkles className="size-5 mr-2" /> Start AI Bargaining
-          </Button>
+          <div className="mt-8 space-y-3">
+            <Button
+              onClick={() => setBargaining(true)}
+              className="w-full h-14 text-base bg-brand-clay hover:bg-brand-clay/90 text-white font-bold shadow-lg shadow-brand-clay/20"
+            >
+              <Sparkles className="size-5 mr-2" /> Start AI Bargaining
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setInterestOpen(true)}
+              className="w-full h-12 text-sm font-bold border-brand-moss/40 text-brand-green hover:bg-brand-moss/10"
+            >
+              <HandHeart className="size-4 mr-2" /> Express Interest (send your details)
+            </Button>
+            <Link to="/interests" className="block text-center text-xs text-muted-foreground hover:text-brand-clay">
+              View my sent interests →
+            </Link>
+          </div>
         )}
 
         {user?.id === listing.farmer_id && (
