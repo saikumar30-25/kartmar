@@ -1,11 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useListing, useCreateDeal, useRequireAuth } from "@/lib/queries";
+import { useListing, useCreateDeal, useRequireAuth, useCreateInterest } from "@/lib/queries";
 import { rupees } from "@/lib/format";
 import { GradeBadge } from "@/components/FreshnessBadge";
 import { BargainChat } from "@/components/BargainChat";
 import { Button } from "@/components/ui/button";
-import { Sparkles, MapPin, Calendar, Phone, MessageSquare, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Sparkles, MapPin, Calendar, Phone, MessageSquare, Loader2, HandHeart } from "lucide-react";
 import { useState } from "react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
