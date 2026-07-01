@@ -44,10 +44,9 @@ function SelectRole() {
 
     if (existing) {
       setBusy(null);
-      const roleNames: Record<string, string> = { farmer: "Farmer", owner: "Market Owner", partner: "Delivery Partner", admin: "Admin" };
       toast.error(
-        `This Google account (${user.email}) is already registered as a ${roleNames[existing.role] ?? existing.role}. One Google account = one role. To use AgriConnect as a ${roleNames[role]}, sign out and sign in with a different Gmail.`,
-        { duration: 9000 },
+        t.roleMismatch(user.email, getRoleName(lang, existing.role), getRoleName(lang, role)),
+        { duration: 10000 },
       );
       return;
     }
@@ -55,9 +54,8 @@ function SelectRole() {
     const { error } = await supabase.from("user_roles").insert({ user_id: user.id, role });
     if (error) {
       setBusy(null);
-      // unique_violation = code 23505 → role already assigned
       if (error.code === "23505") {
-        toast.error("This Google account already has a role assigned. Sign in with a different email to choose another role.");
+        toast.error(t.roleAlready);
       } else {
         toast.error(error.message);
       }
