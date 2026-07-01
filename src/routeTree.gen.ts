@@ -15,6 +15,7 @@ import { Route as PostRequirementRouteImport } from './routes/post-requirement'
 import { Route as PostListingRouteImport } from './routes/post-listing'
 import { Route as PartnerRouteImport } from './routes/partner'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as InterestsRouteImport } from './routes/interests'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as DealsRouteImport } from './routes/deals'
 import { Route as BrowseRouteImport } from './routes/browse'
@@ -55,6 +56,11 @@ const PartnerRoute = PartnerRouteImport.update({
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InterestsRoute = InterestsRouteImport.update({
+  id: '/interests',
+  path: '/interests',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HomeRoute = HomeRouteImport.update({
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/browse': typeof BrowseRoute
   '/deals': typeof DealsRouteWithChildren
   '/home': typeof HomeRoute
+  '/interests': typeof InterestsRoute
   '/onboarding': typeof OnboardingRoute
   '/partner': typeof PartnerRouteWithChildren
   '/post-listing': typeof PostListingRoute
@@ -140,6 +147,7 @@ export interface FileRoutesByTo {
   '/browse': typeof BrowseRoute
   '/deals': typeof DealsRouteWithChildren
   '/home': typeof HomeRoute
+  '/interests': typeof InterestsRoute
   '/onboarding': typeof OnboardingRoute
   '/partner': typeof PartnerRouteWithChildren
   '/post-listing': typeof PostListingRoute
@@ -160,6 +168,7 @@ export interface FileRoutesById {
   '/browse': typeof BrowseRoute
   '/deals': typeof DealsRouteWithChildren
   '/home': typeof HomeRoute
+  '/interests': typeof InterestsRoute
   '/onboarding': typeof OnboardingRoute
   '/partner': typeof PartnerRouteWithChildren
   '/post-listing': typeof PostListingRoute
@@ -181,6 +190,7 @@ export interface FileRouteTypes {
     | '/browse'
     | '/deals'
     | '/home'
+    | '/interests'
     | '/onboarding'
     | '/partner'
     | '/post-listing'
@@ -200,6 +210,7 @@ export interface FileRouteTypes {
     | '/browse'
     | '/deals'
     | '/home'
+    | '/interests'
     | '/onboarding'
     | '/partner'
     | '/post-listing'
@@ -219,6 +230,7 @@ export interface FileRouteTypes {
     | '/browse'
     | '/deals'
     | '/home'
+    | '/interests'
     | '/onboarding'
     | '/partner'
     | '/post-listing'
@@ -239,6 +251,7 @@ export interface RootRouteChildren {
   BrowseRoute: typeof BrowseRoute
   DealsRoute: typeof DealsRouteWithChildren
   HomeRoute: typeof HomeRoute
+  InterestsRoute: typeof InterestsRoute
   OnboardingRoute: typeof OnboardingRoute
   PartnerRoute: typeof PartnerRouteWithChildren
   PostListingRoute: typeof PostListingRoute
@@ -291,6 +304,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/interests': {
+      id: '/interests'
+      path: '/interests'
+      fullPath: '/interests'
+      preLoaderRoute: typeof InterestsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/home': {
@@ -402,6 +422,7 @@ const rootRouteChildren: RootRouteChildren = {
   BrowseRoute: BrowseRoute,
   DealsRoute: DealsRouteWithChildren,
   HomeRoute: HomeRoute,
+  InterestsRoute: InterestsRoute,
   OnboardingRoute: OnboardingRoute,
   PartnerRoute: PartnerRouteWithChildren,
   PostListingRoute: PostListingRoute,

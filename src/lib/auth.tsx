@@ -16,6 +16,7 @@ export type Profile = {
   rating: number;
   is_verified: boolean;
   details_completed: boolean;
+  language: string | null;
 };
 
 export type AuthUser = Profile & {
@@ -55,6 +56,7 @@ async function fetchProfile(authUser: User): Promise<AuthUser | null> {
     rating: Number(profile.rating ?? 5),
     is_verified: profile.is_verified,
     details_completed: profile.details_completed ?? false,
+    language: (profile as any).language ?? null,
     email: authUser.email ?? "",
     role,
   };

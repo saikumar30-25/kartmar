@@ -17,6 +17,87 @@ export type TripInsert = Database["public"]["Tables"]["trips"]["Insert"];
 export type PartnerProfileRow = Database["public"]["Tables"]["partner_profiles"]["Row"];
 export type PartnerProfileInsert = Database["public"]["Tables"]["partner_profiles"]["Insert"];
 export type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
+export type InterestRow = Database["public"]["Tables"]["interest_requests"]["Row"];
+export type InterestInsert = Database["public"]["Tables"]["interest_requests"]["Insert"];
+
+// ---------- Interest requests (Buyer -> Farmer) ----------
+export function useCreateInterest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: InterestInsert) => {
+      const { data, error } = await supabase.from("interest_requests").insert(input).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["interests"] });
+    },
+  });
+}
+
+export function useMyInterests() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const q = useQuery({
+    queryKey: ["interests", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("interest_requests")
+        .select("*")
+        .or(`farmer_id.eq.${user.id},buyer_id.eq.${user.id}`)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      if (!data?.length) return [];
+      const ids = Array.from(new Set(data.flatMap((r) => [r.farmer_id, r.buyer_id])));
+      const { data: profs } = await supabase.from("profiles").select("id,name,phone,district,state").in("id", ids);
+      const pm = new Map((profs ?? []).map((p) => [p.id, p]));
+      const listingIds = Array.from(new Set(data.map((r) => r.listing_id)));
+      const { data: lst } = await supabase.from("listings").select("id,product_name,unit,photo_url").in("id", listingIds);
+      const lm = new Map((lst ?? []).map((l) => [l.id, l]));
+      return data.map((r) => ({
+        ...r,
+        farmer: pm.get(r.farmer_id) ?? null,
+        buyer: pm.get(r.buyer_id) ?? null,
+        listing: lm.get(r.listing_id) ?? null,
+      }));
+    },
+    enabled: !!user,
+  });
+
+  useEffect(() => {
+    if (!user) return;
+    const ch = supabase
+      .channel(`interests:${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "interest_requests" }, () =>
+        qc.invalidateQueries({ queryKey: ["interests", user.id] }),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [user, qc]);
+
+  return q;
+}
+
+export function useRespondInterest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, status, response }: { id: string; status: "accepted" | "rejected"; response?: string }) => {
+      const { data, error } = await supabase
+        .from("interest_requests")
+        .update({ status, farmer_response: response ?? null, responded_at: new Date().toISOString() })
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["interests"] }),
+  });
+}
+
 
 // ---------- Profile editing ----------
 export function useUpdateProfile() {

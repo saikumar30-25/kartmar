@@ -1,11 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useListing, useCreateDeal, useRequireAuth } from "@/lib/queries";
+import { useListing, useCreateDeal, useRequireAuth, useCreateInterest } from "@/lib/queries";
 import { rupees } from "@/lib/format";
 import { GradeBadge } from "@/components/FreshnessBadge";
 import { BargainChat } from "@/components/BargainChat";
 import { Button } from "@/components/ui/button";
-import { Sparkles, MapPin, Calendar, Phone, MessageSquare, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Sparkles, MapPin, Calendar, Phone, MessageSquare, Loader2, HandHeart } from "lucide-react";
 import { useState } from "react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -27,8 +29,13 @@ function Detail() {
   const navigate = useNavigate();
   const { data: listing, isLoading } = useListing(id);
   const createDeal = useCreateDeal();
+  const createInterest = useCreateInterest();
   const [bargaining, setBargaining] = useState(false);
   const [confirmedPrice, setConfirmedPrice] = useState<number | null>(null);
+  const [interestOpen, setInterestOpen] = useState(false);
+  const [iMsg, setIMsg] = useState("");
+  const [iQty, setIQty] = useState("");
+  const [iOffer, setIOffer] = useState("");
 
   if (isLoading) return <div className="py-20 grid place-items-center"><Loader2 className="size-6 animate-spin" /></div>;
   if (!listing) {
@@ -66,6 +73,33 @@ function Detail() {
       navigate({ to: "/deals/$id", params: { id: deal.id } });
     } catch (e: any) {
       toast.error(e.message || "Failed to create deal");
+    }
+  };
+
+  const sendInterest = async () => {
+    if (!user) return;
+    if (!user.address || !user.phone) {
+      toast.error("Please add your address and phone in Profile before sending interest.");
+      return;
+    }
+    try {
+      await createInterest.mutateAsync({
+        listing_id: listing.id,
+        farmer_id: listing.farmer_id,
+        buyer_id: user.id,
+        buyer_name: user.name,
+        buyer_phone: user.phone,
+        buyer_address: user.address,
+        buyer_pincode: user.pincode,
+        message: iMsg || `Hi, I'm interested in your ${listing.product_name}.`,
+        quantity: iQty ? Number(iQty) : null,
+        offer_price_paise: iOffer ? Math.round(Number(iOffer) * 100) : null,
+      });
+      toast.success("Interest sent to farmer. You'll be notified when they respond.");
+      setInterestOpen(false);
+      setIMsg(""); setIQty(""); setIOffer("");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to send");
     }
   };
 
@@ -129,12 +163,24 @@ function Detail() {
         {listing.description && <p className="mt-6 text-sm text-muted-foreground leading-relaxed">{listing.description}</p>}
 
         {!bargaining && !confirmedPrice && user?.id !== listing.farmer_id && (
-          <Button
-            onClick={() => setBargaining(true)}
-            className="mt-8 w-full h-14 text-base bg-brand-clay hover:bg-brand-clay/90 text-white font-bold shadow-lg shadow-brand-clay/20"
-          >
-            <Sparkles className="size-5 mr-2" /> Start AI Bargaining
-          </Button>
+          <div className="mt-8 space-y-3">
+            <Button
+              onClick={() => setBargaining(true)}
+              className="w-full h-14 text-base bg-brand-clay hover:bg-brand-clay/90 text-white font-bold shadow-lg shadow-brand-clay/20"
+            >
+              <Sparkles className="size-5 mr-2" /> Start AI Bargaining
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setInterestOpen(true)}
+              className="w-full h-12 text-sm font-bold border-brand-moss/40 text-brand-green hover:bg-brand-moss/10"
+            >
+              <HandHeart className="size-4 mr-2" /> Express Interest (send your details)
+            </Button>
+            <Link to="/interests" className="block text-center text-xs text-muted-foreground hover:text-brand-clay">
+              View my sent interests →
+            </Link>
+          </div>
         )}
 
         {user?.id === listing.farmer_id && (
@@ -174,6 +220,33 @@ function Detail() {
             <DialogFooter>
               <Button onClick={handleConfirm} disabled={createDeal.isPending} className="bg-brand-green text-brand-cream w-full">
                 {createDeal.isPending ? "Saving…" : "Save deal & continue"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={interestOpen} onOpenChange={setInterestOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="font-serif italic text-2xl text-brand-green">Send interest to farmer</DialogTitle>
+              <DialogDescription>
+                Your name, phone and address will be shared with {farmer?.name ?? "the farmer"} so they can decide whether to sell.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="rounded-lg bg-brand-cream/60 p-3 text-xs">
+                <p><strong>{user?.name}</strong> · {user?.phone ?? "no phone"}</p>
+                <p className="text-muted-foreground mt-0.5">{user?.address ?? "No address on file"}{user?.pincode ? ` — ${user.pincode}` : ""}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Input placeholder={`Quantity (${listing.unit})`} value={iQty} onChange={(e) => setIQty(e.target.value)} type="number" />
+                <Input placeholder={`Your offer ₹/${listing.unit}`} value={iOffer} onChange={(e) => setIOffer(e.target.value)} type="number" />
+              </div>
+              <Textarea placeholder="Message to farmer (optional)" value={iMsg} onChange={(e) => setIMsg(e.target.value)} rows={3} />
+            </div>
+            <DialogFooter>
+              <Button onClick={sendInterest} disabled={createInterest.isPending} className="w-full bg-brand-green text-brand-cream">
+                {createInterest.isPending ? "Sending…" : "Send interest"}
               </Button>
             </DialogFooter>
           </DialogContent>

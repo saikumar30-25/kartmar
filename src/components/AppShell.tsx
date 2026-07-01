@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Bell, Home, Search, MessageCircle, User, LogOut, Sprout, ShoppingBasket, Truck, Shield } from "lucide-react";
+import { Bell, Home, Search, MessageCircle, User, LogOut, Sprout, ShoppingBasket, Truck, Shield, HandHeart } from "lucide-react";
 import { useAuth, type Role } from "@/lib/auth";
 import { useState, type ReactNode } from "react";
 const notifications: Array<{ id: string; message: string; read: boolean }> = [];
@@ -110,6 +110,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => navigate({ to: "/profile" })}>
                     <User className="size-3.5 mr-2" /> Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate({ to: "/interests" })}>
+                    <HandHeart className="size-3.5 mr-2" /> Interests
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate({ to: "/advisor" })}>
                     <MessageCircle className="size-3.5 mr-2" /> AgriAdvisor

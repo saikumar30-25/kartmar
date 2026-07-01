@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Sprout, ShoppingBasket, Truck, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { getDict, getRoleName, type Lang } from "@/lib/i18n";
 
 export const Route = createFileRoute("/select-role")({
   head: () => ({ meta: [{ title: "Pick your role — AgriConnect" }] }),
@@ -21,6 +22,8 @@ function SelectRole() {
   const { user, loading, refresh, signOut } = useAuth();
   const navigate = useNavigate();
   const [busy, setBusy] = useState<Role | null>(null);
+  const [lang, setLang] = useState<Lang>("en");
+  const t = getDict(lang);
 
   useEffect(() => {
     if (loading) return;
@@ -41,10 +44,9 @@ function SelectRole() {
 
     if (existing) {
       setBusy(null);
-      const roleNames: Record<string, string> = { farmer: "Farmer", owner: "Market Owner", partner: "Delivery Partner", admin: "Admin" };
       toast.error(
-        `This Google account (${user.email}) is already registered as a ${roleNames[existing.role] ?? existing.role}. One Google account = one role. To use AgriConnect as a ${roleNames[role]}, sign out and sign in with a different Gmail.`,
-        { duration: 9000 },
+        t.roleMismatch(user.email, getRoleName(lang, existing.role), getRoleName(lang, role)),
+        { duration: 10000 },
       );
       return;
     }
@@ -52,9 +54,8 @@ function SelectRole() {
     const { error } = await supabase.from("user_roles").insert({ user_id: user.id, role });
     if (error) {
       setBusy(null);
-      // unique_violation = code 23505 → role already assigned
       if (error.code === "23505") {
-        toast.error("This Google account already has a role assigned. Sign in with a different email to choose another role.");
+        toast.error(t.roleAlready);
       } else {
         toast.error(error.message);
       }
@@ -77,6 +78,17 @@ function SelectRole() {
   return (
     <div className="min-h-screen grid place-items-center bg-brand-cream p-6">
       <div className="w-full max-w-2xl">
+        <div className="flex justify-center gap-1 mb-4">
+          {(["en", "hi", "te"] as Lang[]).map((l) => (
+            <button
+              key={l}
+              onClick={() => setLang(l)}
+              className={`px-3 py-1 text-xs font-bold uppercase tracking-widest rounded-full ${lang === l ? "bg-brand-green text-brand-cream" : "bg-card ring-1 ring-border text-muted-foreground"}`}
+            >
+              {l === "en" ? "EN" : l === "hi" ? "हिं" : "తె"}
+            </button>
+          ))}
+        </div>
         <p className="text-center text-xs uppercase tracking-widest text-brand-moss">Welcome, {user.name}</p>
         <h1 className="mt-2 font-serif italic text-4xl text-brand-green text-center">What brings you here?</h1>
         <p className="text-center text-sm text-muted-foreground mt-2">
