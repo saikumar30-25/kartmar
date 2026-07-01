@@ -116,12 +116,10 @@ function Partner() {
       {!isApproved && (
         <div className={`rounded-2xl p-5 ring-1 ${isRejected ? "bg-destructive/10 ring-destructive/30 text-destructive" : "bg-brand-clay/10 ring-brand-clay/30 text-brand-clay"}`}>
           <p className="font-extrabold text-sm">
-            {isRejected ? "Verification rejected" : "Awaiting admin approval"}
+            {isRejected ? t.partnerBannerRejected : t.partnerBannerPending}
           </p>
           <p className="text-xs mt-1 text-foreground/80">
-            {isRejected
-              ? (profile.rejection_reason || "Your documents were rejected. Please re-upload and resubmit.")
-              : "Your documents have been submitted. You'll be able to go online and accept trips once an admin approves them (usually within 24 hours)."}
+            {isRejected ? t.partnerRejected(profile.rejection_reason || "") : t.partnerPending}
           </p>
           <Link to="/partner/register" className="inline-block mt-3 text-xs font-extrabold underline">
             {isRejected ? "Resubmit documents →" : "Edit documents →"}
