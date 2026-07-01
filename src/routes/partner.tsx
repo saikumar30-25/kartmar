@@ -13,6 +13,7 @@ import {
   useMyPartnerProfile, useTogglePartnerOnline, usePartnerTrips,
   useAcceptTrip, useUpdateTripStatus, useRequireAuth,
 } from "@/lib/queries";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/partner")({
   head: () => ({ meta: [{ title: "Partner dashboard — AgriConnect" }] }),
