@@ -29,8 +29,13 @@ function Detail() {
   const navigate = useNavigate();
   const { data: listing, isLoading } = useListing(id);
   const createDeal = useCreateDeal();
+  const createInterest = useCreateInterest();
   const [bargaining, setBargaining] = useState(false);
   const [confirmedPrice, setConfirmedPrice] = useState<number | null>(null);
+  const [interestOpen, setInterestOpen] = useState(false);
+  const [iMsg, setIMsg] = useState("");
+  const [iQty, setIQty] = useState("");
+  const [iOffer, setIOffer] = useState("");
 
   if (isLoading) return <div className="py-20 grid place-items-center"><Loader2 className="size-6 animate-spin" /></div>;
   if (!listing) {
