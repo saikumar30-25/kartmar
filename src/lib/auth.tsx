@@ -16,6 +16,7 @@ export type Profile = {
   rating: number;
   is_verified: boolean;
   details_completed: boolean;
+  language: string | null;
 };
 
 export type AuthUser = Profile & {
