@@ -92,9 +92,46 @@ export function useRespondInterest() {
         .select()
         .single();
       if (error) throw error;
+
+      // Auto-create a deal on acceptance so the buyer/farmer land straight in negotiation.
+      if (status === "accepted") {
+        const { data: existing } = await supabase
+          .from("deals")
+          .select("id")
+          .eq("listing_id", data.listing_id)
+          .eq("buyer_id", data.buyer_id)
+          .maybeSingle();
+        if (!existing) {
+          const { data: listing } = await supabase
+            .from("listings").select("*").eq("id", data.listing_id).maybeSingle();
+          if (listing) {
+            const qty = Number(data.quantity ?? listing.quantity);
+            const price = Number(data.offer_price_paise ?? listing.price_paise);
+            const { data: buyerProfile } = await supabase
+              .from("profiles").select("district").eq("id", data.buyer_id).maybeSingle();
+            await supabase.from("deals").insert({
+              listing_id: listing.id,
+              farmer_id: listing.farmer_id,
+              buyer_id: data.buyer_id,
+              product_name: listing.product_name,
+              photo_url: listing.photo_url,
+              quantity: qty,
+              unit: listing.unit,
+              agreed_price_paise: price,
+              total_paise: qty * price,
+              pickup_district: listing.district,
+              drop_district: buyerProfile?.district ?? null,
+              status: "negotiating",
+            });
+          }
+        }
+      }
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["interests"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["interests"] });
+      qc.invalidateQueries({ queryKey: ["deals"] });
+    },
   });
 }
 
