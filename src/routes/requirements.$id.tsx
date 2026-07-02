@@ -4,6 +4,7 @@ import { useRequirement, useCreateDeal, useRequireAuth } from "@/lib/queries";
 import { rupees } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { MapPin, Calendar, Sparkles, MessageSquare, Loader2 } from "lucide-react";
+import { waLink } from "@/lib/whatsapp";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/requirements/$id")({

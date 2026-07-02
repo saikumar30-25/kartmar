@@ -7,6 +7,7 @@ import { Loader2, MessageSquare, Phone, Check, X, Inbox, Send, MapPin } from "lu
 import { useState } from "react";
 import { toast } from "sonner";
 import { rupees } from "@/lib/format";
+import { waLink, telLink } from "@/lib/whatsapp";
 
 export const Route = createFileRoute("/interests")({
   head: () => ({ meta: [{ title: "Interests — AgriConnect" }] }),
@@ -77,7 +78,7 @@ function ReceivedCard({ r }: { r: any }) {
   const [reply, setReply] = useState("");
   const [showReply, setShowReply] = useState(false);
   const buyerPhone = r.buyer?.phone ?? r.buyer_phone;
-  const waMsg = encodeURIComponent(`Hi ${r.buyer_name}, regarding your interest in ${r.listing?.product_name ?? "my listing"} on AgriConnect.`);
+  const waMsgText = `Hi ${r.buyer_name}, regarding your interest in ${r.listing?.product_name ?? "my listing"} on AgriConnect.`;
 
   const act = async (status: "accepted" | "rejected") => {
     try {
@@ -123,10 +124,10 @@ function ReceivedCard({ r }: { r: any }) {
             {buyerPhone && (
               <>
                 <Button size="sm" variant="outline" asChild>
-                  <a href={`tel:${buyerPhone}`}><Phone className="size-3.5 mr-1" /> Call</a>
+                  <a href={telLink(buyerPhone)!}><Phone className="size-3.5 mr-1" /> Call</a>
                 </Button>
                 <Button size="sm" asChild className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                  <a href={`https://wa.me/${String(buyerPhone).replace(/\D/g, "")}?text=${waMsg}`} target="_blank" rel="noreferrer">
+                  <a href={waLink(buyerPhone, waMsgText)!} target="_blank" rel="noreferrer">
                     <MessageSquare className="size-3.5 mr-1" /> WhatsApp
                   </a>
                 </Button>
@@ -138,10 +139,10 @@ function ReceivedCard({ r }: { r: any }) {
       {r.status !== "pending" && buyerPhone && (
         <div className="mt-3 flex gap-2">
           <Button size="sm" variant="outline" asChild>
-            <a href={`tel:${buyerPhone}`}><Phone className="size-3.5 mr-1" /> Call buyer</a>
+            <a href={telLink(buyerPhone)!}><Phone className="size-3.5 mr-1" /> Call buyer</a>
           </Button>
           <Button size="sm" asChild className="bg-emerald-600 hover:bg-emerald-700 text-white">
-            <a href={`https://wa.me/${String(buyerPhone).replace(/\D/g, "")}?text=${waMsg}`} target="_blank" rel="noreferrer">
+            <a href={waLink(buyerPhone, waMsgText)!} target="_blank" rel="noreferrer">
               <MessageSquare className="size-3.5 mr-1" /> WhatsApp
             </a>
           </Button>
