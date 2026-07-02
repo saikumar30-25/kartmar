@@ -154,7 +154,7 @@ function ReceivedCard({ r }: { r: any }) {
 
 function SentCard({ r }: { r: any }) {
   const farmerPhone = r.farmer?.phone;
-  const waMsg = encodeURIComponent(`Hi, I sent an interest request for ${r.listing?.product_name ?? "your listing"} on AgriConnect.`);
+  const waMsgText = `Hi, I sent an interest request for ${r.listing?.product_name ?? "your listing"} on AgriConnect.`;
   return (
     <div className="rounded-2xl bg-card ring-1 ring-border p-4">
       <div className="flex items-start gap-3">
@@ -173,10 +173,10 @@ function SentCard({ r }: { r: any }) {
       {r.status === "accepted" && farmerPhone && (
         <div className="mt-3 flex gap-2">
           <Button size="sm" variant="outline" asChild>
-            <a href={`tel:${farmerPhone}`}><Phone className="size-3.5 mr-1" /> Call farmer</a>
+            <a href={telLink(farmerPhone)!}><Phone className="size-3.5 mr-1" /> Call farmer</a>
           </Button>
           <Button size="sm" asChild className="bg-emerald-600 hover:bg-emerald-700 text-white">
-            <a href={`https://wa.me/${String(farmerPhone).replace(/\D/g, "")}?text=${waMsg}`} target="_blank" rel="noreferrer">
+            <a href={waLink(farmerPhone, waMsgText)!} target="_blank" rel="noreferrer">
               <MessageSquare className="size-3.5 mr-1" /> WhatsApp
             </a>
           </Button>
