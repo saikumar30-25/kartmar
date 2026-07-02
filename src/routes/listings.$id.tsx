@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Sparkles, MapPin, Calendar, Phone, MessageSquare, Loader2, HandHeart } from "lucide-react";
+import { waLink, telLink } from "@/lib/whatsapp";
 import { useState } from "react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -128,13 +129,13 @@ function Detail() {
             </div>
             {farmer?.phone && (
               <Button variant="outline" size="sm" asChild>
-                <a href={`tel:${farmer.phone}`}><Phone className="size-3.5 mr-1" /> Call</a>
+                <a href={telLink(farmer.phone)!}><Phone className="size-3.5 mr-1" /> Call</a>
               </Button>
             )}
           </div>
           {farmer?.phone && (
             <a
-              href={`https://wa.me/${String(farmer.phone).replace(/\D/g, "")}?text=${encodeURIComponent(`Hi, interested in your ${listing.product_name} listing on AgriConnect.`)}`}
+              href={waLink(farmer.phone, `Hi, interested in your ${listing.product_name} listing on AgriConnect.`)!}
               target="_blank" rel="noreferrer"
               className="mt-3 w-full block text-center rounded-lg bg-emerald-600 text-white py-2.5 text-sm font-bold"
             >

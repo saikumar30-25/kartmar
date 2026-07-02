@@ -97,8 +97,12 @@ export function AppShell({ children }: { children: ReactNode }) {
               </DropdownMenu>
 
               <DropdownMenu>
-                <DropdownMenuTrigger className="size-9 rounded-full bg-brand-moss/15 text-brand-green text-xs font-bold grid place-items-center ring-1 ring-border">
-                  {user.name.slice(0, 2).toUpperCase()}
+                <DropdownMenuTrigger className="size-9 rounded-full bg-brand-moss/15 text-brand-green text-xs font-bold grid place-items-center ring-1 ring-border overflow-hidden">
+                  {user.avatar_url ? (
+                    <img src={user.avatar_url} alt={user.name} className="size-full object-cover" />
+                  ) : (
+                    user.name.slice(0, 2).toUpperCase()
+                  )}
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>

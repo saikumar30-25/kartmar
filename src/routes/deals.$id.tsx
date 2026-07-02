@@ -8,6 +8,7 @@ import { rupees } from "@/lib/format";
 import { DealStatus } from "./home";
 import { Button } from "@/components/ui/button";
 import { Check, Truck, IndianRupee, AlertTriangle, Star, Send, Loader2, MessageSquare, Phone } from "lucide-react";
+import { waLink, telLink } from "@/lib/whatsapp";
 import { useEffect, useRef, useState } from "react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -329,23 +330,24 @@ function ContactCard({
       <div className="grid sm:grid-cols-2 gap-3">
         {others.map(({ role, contact }) => {
           if (!contact) return null;
-          const digits = (contact.phone ?? "").replace(/\D/g, "");
-          const waMsg = encodeURIComponent(`Hi ${contact.name}, regarding our AgriConnect deal for ${deal.product_name}.`);
+          const waMsg = `Hi ${contact.name}, regarding our AgriConnect deal for ${deal.product_name}.`;
+          const wa = waLink(contact.phone, waMsg);
+          const tel = telLink(contact.phone);
           return (
             <div key={contact.id} className="rounded-xl bg-brand-cream/60 ring-1 ring-border p-3">
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{role}</p>
               <p className="mt-0.5 font-semibold">{contact.name}</p>
-              {digits ? (
+              {wa ? (
                 <div className="mt-2 flex gap-2">
                   <a
-                    href={`https://wa.me/${digits}?text=${waMsg}`}
+                    href={wa}
                     target="_blank" rel="noreferrer"
                     className="flex-1 text-center rounded-lg bg-emerald-600 text-white py-1.5 text-xs font-bold"
                   >
                     <MessageSquare className="size-3.5 inline mr-1" /> WhatsApp
                   </a>
                   <a
-                    href={`tel:${contact.phone}`}
+                    href={tel!}
                     className="rounded-lg ring-1 ring-border bg-card px-3 py-1.5 text-xs font-bold"
                   >
                     <Phone className="size-3.5 inline" />

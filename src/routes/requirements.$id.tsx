@@ -4,6 +4,7 @@ import { useRequirement, useCreateDeal, useRequireAuth } from "@/lib/queries";
 import { rupees } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { MapPin, Calendar, Sparkles, MessageSquare, Loader2 } from "lucide-react";
+import { waLink } from "@/lib/whatsapp";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/requirements/$id")({
@@ -93,9 +94,9 @@ function Detail() {
         <Button onClick={startBargain} disabled={createDeal.isPending} className="h-12 bg-brand-clay text-white font-bold">
           <Sparkles className="size-4 mr-2" /> {createDeal.isPending ? "Starting…" : "Start AI Bargaining"}
         </Button>
-        {buyer?.phone && (
+        {buyer?.phone && waLink(buyer.phone, `Hi, I can supply ${req.product_name}.`) && (
           <a
-            href={`https://wa.me/${String(buyer.phone).replace(/\D/g, "")}?text=${encodeURIComponent(`Hi, I can supply ${req.product_name}.`)}`}
+            href={waLink(buyer.phone, `Hi, I can supply ${req.product_name}.`)!}
             target="_blank" rel="noreferrer"
             className="h-12 grid place-items-center rounded-md bg-emerald-600 text-white text-sm font-bold"
           >
