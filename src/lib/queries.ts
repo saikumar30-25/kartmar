@@ -121,7 +121,7 @@ export function useRespondInterest() {
               total_paise: qty * price,
               pickup_district: listing.district,
               drop_district: buyerProfile?.district ?? null,
-              status: "negotiating",
+              status: "pending_payment",
             });
           }
         }
