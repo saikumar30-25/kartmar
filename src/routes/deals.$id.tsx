@@ -8,6 +8,7 @@ import { rupees } from "@/lib/format";
 import { DealStatus } from "./home";
 import { Button } from "@/components/ui/button";
 import { Check, Truck, IndianRupee, AlertTriangle, Star, Send, Loader2, MessageSquare, Phone } from "lucide-react";
+import { waLink, telLink } from "@/lib/whatsapp";
 import { useEffect, useRef, useState } from "react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
