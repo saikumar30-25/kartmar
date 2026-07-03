@@ -44,12 +44,18 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const unread = notifications.filter((n) => !n.read).length;
 
-  const tabs = [
-    { to: "/home", label: "Home", icon: Home },
-    { to: "/browse", label: "Browse", icon: Search },
-    { to: "/deals", label: "Deals", icon: MessageCircle },
-    { to: "/profile", label: "Profile", icon: User },
-  ] as const;
+  const tabs = currentRole === "partner"
+    ? ([
+        { to: "/partner", label: "Trips", icon: Truck },
+        { to: "/deals", label: "Deals", icon: MessageCircle },
+        { to: "/profile", label: "Profile", icon: User },
+      ] as const)
+    : ([
+        { to: "/home", label: "Home", icon: Home },
+        { to: "/browse", label: "Browse", icon: Search },
+        { to: "/deals", label: "Deals", icon: MessageCircle },
+        { to: "/profile", label: "Profile", icon: User },
+      ] as const);
 
   return (
     <div className="min-h-screen bg-brand-cream text-foreground pb-24 lg:pb-8">
