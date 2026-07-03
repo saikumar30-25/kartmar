@@ -19,6 +19,7 @@ export const Route = createFileRoute("/browse")({
 function Browse() {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<string>("all");
+  useForbidPartner();
   const { data: listings = [], isLoading } = useListings();
 
   const filtered = listings.filter(
