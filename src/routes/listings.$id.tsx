@@ -85,16 +85,20 @@ function Detail() {
     }
     try {
       await createInterest.mutateAsync({
-        listing_id: listing.id,
-        farmer_id: listing.farmer_id,
-        buyer_id: user.id,
-        buyer_name: user.name,
-        buyer_phone: user.phone,
-        buyer_address: user.address,
-        buyer_pincode: user.pincode,
-        message: iMsg || `Hi, I'm interested in your ${listing.product_name}.`,
-        quantity: iQty ? Number(iQty) : null,
-        offer_price_paise: iOffer ? Math.round(Number(iOffer) * 100) : null,
+        interest: {
+          listing_id: listing.id,
+          farmer_id: listing.farmer_id,
+          buyer_id: user.id,
+          buyer_name: user.name,
+          message: iMsg || `Hi, I'm interested in your ${listing.product_name}.`,
+          quantity: iQty ? Number(iQty) : null,
+          offer_price_paise: iOffer ? Math.round(Number(iOffer) * 100) : null,
+        },
+        contact: {
+          buyer_phone: user.phone,
+          buyer_address: user.address ?? "",
+          buyer_pincode: user.pincode,
+        },
       });
       toast.success("Interest sent to farmer. You'll be notified when they respond.");
       setInterestOpen(false);
