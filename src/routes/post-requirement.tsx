@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useState } from "react";
-import { useCreateRequirement, useRequireAuth } from "@/lib/queries";
+import { useCreateRequirement, useRequireAuth, useForbidPartner } from "@/lib/queries";
 
 export const Route = createFileRoute("/post-requirement")({
   head: () => ({ meta: [{ title: "Post a requirement — AgriConnect" }] }),

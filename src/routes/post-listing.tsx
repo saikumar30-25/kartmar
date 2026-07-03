@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { useRef, useState } from "react";
 import { Sparkles, ImagePlus, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
-import { useCreateListing, useRequireAuth } from "@/lib/queries";
+import { useCreateListing, useRequireAuth, useForbidPartner } from "@/lib/queries";
 import { uploadAndSign } from "@/lib/storage";
 
 export const Route = createFileRoute("/post-listing")({
@@ -22,7 +22,7 @@ export const Route = createFileRoute("/post-listing")({
 
 function PostListing() {
   const navigate = useNavigate();
-  const { user } = useRequireAuth();
+  const { user } = useRequireAuth(); useForbidPartner();
   const createListing = useCreateListing();
   const fileRef = useRef<HTMLInputElement>(null);
 
