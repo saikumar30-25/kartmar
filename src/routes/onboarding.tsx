@@ -1,12 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
-import { Loader2, Upload, Check, ImagePlus, Sprout, ShoppingBasket, Truck } from "lucide-react";
+import { Loader2, Upload, Check, ImagePlus, Sprout, ShoppingBasket, Truck, Sparkles, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth, type Role } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadAndSign } from "@/lib/storage";
+import { validateOnboarding, type ValidationIssue } from "@/lib/validate.functions";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
