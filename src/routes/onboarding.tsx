@@ -125,11 +125,14 @@ function OnboardingForm({ role, onDone }: { role: Role; onDone: () => Promise<vo
   const [vehicleNumber, setVehicleNumber] = useState("");
   const [capacity, setCapacity] = useState("");
   const [aadhaar, setAadhaar] = useState("");
+  const [licenseNumber, setLicenseNumber] = useState("");
   const [licenseUrl, setLicenseUrl] = useState<string | null>(null);
   const [vehicleUrl, setVehicleUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState<"license" | "vehicle" | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
+  const [aiIssues, setAiIssues] = useState<ValidationIssue[]>([]);
+  const [aiChecking, setAiChecking] = useState(false);
   const licenseRef = useRef<HTMLInputElement>(null);
   const vehicleRef = useRef<HTMLInputElement>(null);
 
