@@ -239,6 +239,16 @@ export function useRequireAuth() {
   return { user, loading };
 }
 
+// Redirect delivery partners away from buyer/farmer-only pages.
+export function useForbidPartner() {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (loading) return;
+    if (user?.role === "partner") navigate({ to: "/partner" });
+  }, [user, loading, navigate]);
+}
+
 // ---------- Listings ----------
 export function useListings() {
   return useQuery({
