@@ -298,6 +298,7 @@ export type Database = {
           id: string
           is_online: boolean
           license_doc_url: string | null
+          license_number: string | null
           license_photo_url: string | null
           rating: number
           rejection_reason: string | null
@@ -320,6 +321,7 @@ export type Database = {
           id: string
           is_online?: boolean
           license_doc_url?: string | null
+          license_number?: string | null
           license_photo_url?: string | null
           rating?: number
           rejection_reason?: string | null
@@ -342,6 +344,7 @@ export type Database = {
           id?: string
           is_online?: boolean
           license_doc_url?: string | null
+          license_number?: string | null
           license_photo_url?: string | null
           rating?: number
           rejection_reason?: string | null

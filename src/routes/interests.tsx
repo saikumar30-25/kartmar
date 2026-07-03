@@ -154,7 +154,9 @@ function ReceivedCard({ r }: { r: any }) {
 
 function SentCard({ r }: { r: any }) {
   const farmerPhone = r.farmer?.phone;
-  const waMsgText = `Hi, I sent an interest request for ${r.listing?.product_name ?? "your listing"} on AgriConnect.`;
+  const farmerAddress = r.farmer?.address;
+  const farmerPincode = r.farmer?.pincode;
+  const waMsgText = `Hi ${r.farmer?.name ?? ""}, I sent an interest request for ${r.listing?.product_name ?? "your listing"} on AgriConnect.`;
   return (
     <div className="rounded-2xl bg-card ring-1 ring-border p-4">
       <div className="flex items-start gap-3">
@@ -170,17 +172,35 @@ function SentCard({ r }: { r: any }) {
       {r.farmer_response && (
         <p className="mt-2 text-xs bg-brand-cream/60 rounded-lg p-2"><strong>Farmer replied:</strong> {r.farmer_response}</p>
       )}
-      {r.status === "accepted" && farmerPhone && (
-        <div className="mt-3 flex gap-2">
-          <Button size="sm" variant="outline" asChild>
-            <a href={telLink(farmerPhone)!}><Phone className="size-3.5 mr-1" /> Call farmer</a>
-          </Button>
-          <Button size="sm" asChild className="bg-emerald-600 hover:bg-emerald-700 text-white">
-            <a href={waLink(farmerPhone, waMsgText)!} target="_blank" rel="noreferrer">
-              <MessageSquare className="size-3.5 mr-1" /> WhatsApp
-            </a>
-          </Button>
+      {r.status === "accepted" && (
+        <div className="mt-3 rounded-xl bg-emerald-50 ring-1 ring-emerald-200 p-3 space-y-2">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-800">Seller contact revealed</p>
+          <div className="text-sm">
+            <p className="font-semibold text-emerald-900">{r.farmer?.name ?? "Farmer"}</p>
+            {farmerPhone && <p className="text-xs text-emerald-900/80">📞 {farmerPhone}</p>}
+            {(farmerAddress || farmerPincode) && (
+              <p className="text-xs text-emerald-900/80 mt-0.5">
+                <MapPin className="size-3 inline" /> {farmerAddress ?? ""}{farmerPincode ? ` — ${farmerPincode}` : ""}
+              </p>
+            )}
+            <p className="text-xs text-emerald-900/70 mt-0.5">{r.farmer?.district}, {r.farmer?.state}</p>
+          </div>
+          {farmerPhone && (
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" asChild>
+                <a href={telLink(farmerPhone)!}><Phone className="size-3.5 mr-1" /> Call</a>
+              </Button>
+              <Button size="sm" asChild className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                <a href={waLink(farmerPhone, waMsgText)!} target="_blank" rel="noreferrer">
+                  <MessageSquare className="size-3.5 mr-1" /> WhatsApp
+                </a>
+              </Button>
+            </div>
+          )}
         </div>
+      )}
+      {r.status === "pending" && (
+        <p className="mt-3 text-xs text-muted-foreground">⏳ Waiting for farmer to accept. Contact details unlock once they accept.</p>
       )}
     </div>
   );

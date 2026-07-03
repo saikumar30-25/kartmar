@@ -1,12 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
-import { Loader2, Upload, Check, ImagePlus, Sprout, ShoppingBasket, Truck } from "lucide-react";
+import { Loader2, Upload, Check, ImagePlus, Sprout, ShoppingBasket, Truck, Sparkles, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth, type Role } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadAndSign } from "@/lib/storage";
+import { validateOnboarding, type ValidationIssue } from "@/lib/validate.functions";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -124,11 +125,14 @@ function OnboardingForm({ role, onDone }: { role: Role; onDone: () => Promise<vo
   const [vehicleNumber, setVehicleNumber] = useState("");
   const [capacity, setCapacity] = useState("");
   const [aadhaar, setAadhaar] = useState("");
+  const [licenseNumber, setLicenseNumber] = useState("");
   const [licenseUrl, setLicenseUrl] = useState<string | null>(null);
   const [vehicleUrl, setVehicleUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState<"license" | "vehicle" | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
+  const [aiIssues, setAiIssues] = useState<ValidationIssue[]>([]);
+  const [aiChecking, setAiChecking] = useState(false);
   const licenseRef = useRef<HTMLInputElement>(null);
   const vehicleRef = useRef<HTMLInputElement>(null);
 
@@ -169,6 +173,40 @@ function OnboardingForm({ role, onDone }: { role: Role; onDone: () => Promise<vo
       }
       if (!licenseUrl) return toast.error("Driving licence photo is required.");
       if (!vehicleUrl) return toast.error("Vehicle photo is required.");
+      if (!licenseNumber.trim()) return toast.error("Driving licence number is required.");
+    }
+
+    // AI validation gate
+    setAiChecking(true);
+    setAiIssues([]);
+    try {
+      const result = await validateOnboarding({
+        data: {
+          role,
+          name: commonParsed.data.name,
+          phone: commonParsed.data.phone,
+          address: commonParsed.data.address,
+          district: commonParsed.data.district,
+          state: commonParsed.data.state,
+          pincode: commonParsed.data.pincode,
+          vehicle_type: role === "partner" ? vehicleType : null,
+          vehicle_number: role === "partner" ? vehicleNumber : null,
+          capacity_kg: role === "partner" ? capacity : null,
+          aadhaar_last4: role === "partner" ? aadhaar : null,
+          license_number: role === "partner" ? licenseNumber : null,
+        },
+      });
+      if (!result.ok && result.issues.length > 0) {
+        setAiIssues(result.issues);
+        toast.error("AI review found issues — please correct them and try again.");
+        setAiChecking(false);
+        return;
+      }
+    } catch (e: any) {
+      console.error(e);
+      // Fail-open: proceed if AI check itself errors
+    } finally {
+      setAiChecking(false);
     }
 
     setSubmitting(true);
@@ -200,6 +238,7 @@ function OnboardingForm({ role, onDone }: { role: Role; onDone: () => Promise<vo
             district: commonParsed.data.district,
             state: commonParsed.data.state,
             license_photo_url: licenseUrl,
+            license_number: licenseNumber.trim().toUpperCase(),
             vehicle_photo_url: vehicleUrl,
             details_completed: true,
             verification_status: "pending",
@@ -262,6 +301,9 @@ function OnboardingForm({ role, onDone }: { role: Role; onDone: () => Promise<vo
               <Field label="Aadhaar (last 4 digits)">
                 <Input value={aadhaar} onChange={(e) => setAadhaar(e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="1234" inputMode="numeric" required />
               </Field>
+              <Field label="Driving licence number">
+                <Input value={licenseNumber} onChange={(e) => setLicenseNumber(e.target.value.toUpperCase())} placeholder="TS0120230012345" maxLength={20} required />
+              </Field>
             </div>
           </Section>
 
@@ -277,8 +319,26 @@ function OnboardingForm({ role, onDone }: { role: Role; onDone: () => Promise<vo
         </>
       )}
 
-      <Button type="submit" disabled={submitting} className="w-full h-12 gradient-accent text-white font-extrabold shadow-bold">
-        {submitting ? <Loader2 className="size-4 animate-spin" /> : role === "partner" ? "Submit for verification" : "Finish & enter AgriConnect"}
+      {aiIssues.length > 0 && (
+        <div className="rounded-2xl bg-rose-50 ring-1 ring-rose-200 p-4 space-y-2">
+          <div className="flex items-center gap-2 text-rose-800 font-bold text-sm">
+            <AlertTriangle className="size-4" /> AI review found problems
+          </div>
+          <ul className="list-disc pl-5 space-y-1 text-sm text-rose-900">
+            {aiIssues.map((i, idx) => (
+              <li key={idx}><strong className="capitalize">{i.field.replace(/_/g, " ")}:</strong> {i.message}</li>
+            ))}
+          </ul>
+          <p className="text-[11px] text-rose-700">Please correct the details above and submit again.</p>
+        </div>
+      )}
+
+      <Button type="submit" disabled={submitting || aiChecking} className="w-full h-12 gradient-accent text-white font-extrabold shadow-bold">
+        {aiChecking ? (
+          <><Sparkles className="size-4 mr-2 animate-pulse" /> AI verifying your details…</>
+        ) : submitting ? (
+          <Loader2 className="size-4 animate-spin" />
+        ) : role === "partner" ? "Verify & submit for approval" : "AI verify & finish"}
       </Button>
     </form>
   );

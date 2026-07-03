@@ -44,12 +44,18 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const unread = notifications.filter((n) => !n.read).length;
 
-  const tabs = [
-    { to: "/home", label: "Home", icon: Home },
-    { to: "/browse", label: "Browse", icon: Search },
-    { to: "/deals", label: "Deals", icon: MessageCircle },
-    { to: "/profile", label: "Profile", icon: User },
-  ] as const;
+  const tabs = currentRole === "partner"
+    ? ([
+        { to: "/partner", label: "Trips", icon: Truck },
+        { to: "/deals", label: "Deals", icon: MessageCircle },
+        { to: "/profile", label: "Profile", icon: User },
+      ] as const)
+    : ([
+        { to: "/home", label: "Home", icon: Home },
+        { to: "/browse", label: "Browse", icon: Search },
+        { to: "/deals", label: "Deals", icon: MessageCircle },
+        { to: "/profile", label: "Profile", icon: User },
+      ] as const);
 
   return (
     <div className="min-h-screen bg-brand-cream text-foreground pb-24 lg:pb-8">
@@ -115,12 +121,16 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <DropdownMenuItem onClick={() => navigate({ to: "/profile" })}>
                     <User className="size-3.5 mr-2" /> Profile
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate({ to: "/interests" })}>
-                    <HandHeart className="size-3.5 mr-2" /> Interests
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate({ to: "/advisor" })}>
-                    <MessageCircle className="size-3.5 mr-2" /> AgriAdvisor
-                  </DropdownMenuItem>
+                  {currentRole !== "partner" && (
+                    <DropdownMenuItem onClick={() => navigate({ to: "/interests" })}>
+                      <HandHeart className="size-3.5 mr-2" /> Interests
+                    </DropdownMenuItem>
+                  )}
+                  {currentRole !== "partner" && (
+                    <DropdownMenuItem onClick={() => navigate({ to: "/advisor" })}>
+                      <MessageCircle className="size-3.5 mr-2" /> AgriAdvisor
+                    </DropdownMenuItem>
+                  )}
                   {user.role === "admin" && (
                     <DropdownMenuItem onClick={() => navigate({ to: "/admin" })}>
                       <Shield className="size-3.5 mr-2" /> Admin console
@@ -145,7 +155,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main className="mx-auto max-w-6xl px-4 sm:px-6 py-6">{children}</main>
 
       <nav className="fixed bottom-0 inset-x-0 z-40 bg-card/95 backdrop-blur border-t border-border lg:hidden">
-        <div className="grid grid-cols-4">
+        <div className="grid" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
           {tabs.map((t) => {
             const active = pathname === t.to;
             const Icon = t.icon;

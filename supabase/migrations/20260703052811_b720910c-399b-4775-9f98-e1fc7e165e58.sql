@@ -1,0 +1,1 @@
+ALTER TABLE public.partner_profiles ADD COLUMN IF NOT EXISTS license_number TEXT;

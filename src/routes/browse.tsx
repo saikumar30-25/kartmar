@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { ProductCard } from "@/components/ProductCard";
-import { useListings } from "@/lib/queries";
+import { useListings, useForbidPartner } from "@/lib/queries";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ export const Route = createFileRoute("/browse")({
 function Browse() {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<string>("all");
+  useForbidPartner();
   const { data: listings = [], isLoading } = useListings();
 
   const filtered = listings.filter(
