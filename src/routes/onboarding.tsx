@@ -301,6 +301,9 @@ function OnboardingForm({ role, onDone }: { role: Role; onDone: () => Promise<vo
               <Field label="Aadhaar (last 4 digits)">
                 <Input value={aadhaar} onChange={(e) => setAadhaar(e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="1234" inputMode="numeric" required />
               </Field>
+              <Field label="Driving licence number">
+                <Input value={licenseNumber} onChange={(e) => setLicenseNumber(e.target.value.toUpperCase())} placeholder="TS0120230012345" maxLength={20} required />
+              </Field>
             </div>
           </Section>
 
