@@ -121,12 +121,16 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <DropdownMenuItem onClick={() => navigate({ to: "/profile" })}>
                     <User className="size-3.5 mr-2" /> Profile
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate({ to: "/interests" })}>
-                    <HandHeart className="size-3.5 mr-2" /> Interests
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate({ to: "/advisor" })}>
-                    <MessageCircle className="size-3.5 mr-2" /> AgriAdvisor
-                  </DropdownMenuItem>
+                  {currentRole !== "partner" && (
+                    <DropdownMenuItem onClick={() => navigate({ to: "/interests" })}>
+                      <HandHeart className="size-3.5 mr-2" /> Interests
+                    </DropdownMenuItem>
+                  )}
+                  {currentRole !== "partner" && (
+                    <DropdownMenuItem onClick={() => navigate({ to: "/advisor" })}>
+                      <MessageCircle className="size-3.5 mr-2" /> AgriAdvisor
+                    </DropdownMenuItem>
+                  )}
                   {user.role === "admin" && (
                     <DropdownMenuItem onClick={() => navigate({ to: "/admin" })}>
                       <Shield className="size-3.5 mr-2" /> Admin console
