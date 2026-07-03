@@ -319,8 +319,26 @@ function OnboardingForm({ role, onDone }: { role: Role; onDone: () => Promise<vo
         </>
       )}
 
-      <Button type="submit" disabled={submitting} className="w-full h-12 gradient-accent text-white font-extrabold shadow-bold">
-        {submitting ? <Loader2 className="size-4 animate-spin" /> : role === "partner" ? "Submit for verification" : "Finish & enter AgriConnect"}
+      {aiIssues.length > 0 && (
+        <div className="rounded-2xl bg-rose-50 ring-1 ring-rose-200 p-4 space-y-2">
+          <div className="flex items-center gap-2 text-rose-800 font-bold text-sm">
+            <AlertTriangle className="size-4" /> AI review found problems
+          </div>
+          <ul className="list-disc pl-5 space-y-1 text-sm text-rose-900">
+            {aiIssues.map((i, idx) => (
+              <li key={idx}><strong className="capitalize">{i.field.replace(/_/g, " ")}:</strong> {i.message}</li>
+            ))}
+          </ul>
+          <p className="text-[11px] text-rose-700">Please correct the details above and submit again.</p>
+        </div>
+      )}
+
+      <Button type="submit" disabled={submitting || aiChecking} className="w-full h-12 gradient-accent text-white font-extrabold shadow-bold">
+        {aiChecking ? (
+          <><Sparkles className="size-4 mr-2 animate-pulse" /> AI verifying your details…</>
+        ) : submitting ? (
+          <Loader2 className="size-4 animate-spin" />
+        ) : role === "partner" ? "Verify & submit for approval" : "AI verify & finish"}
       </Button>
     </form>
   );
