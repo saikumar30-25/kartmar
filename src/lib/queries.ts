@@ -67,12 +67,12 @@ export function useMyInterests() {
         .in("id", ids);
       const { data: contactProfs } = await supabase
         .from("profiles")
-        .select("id,phone")
+        .select("id,phone,address,pincode")
         .in("id", ids);
       const pm = new Map((profs ?? []).map((p) => [p.id, p as any]));
       for (const cp of contactProfs ?? []) {
         const existing = pm.get(cp.id) ?? { id: cp.id };
-        pm.set(cp.id, { ...existing, phone: cp.phone });
+        pm.set(cp.id, { ...existing, phone: cp.phone, address: cp.address, pincode: cp.pincode });
       }
       const listingIds = Array.from(new Set(data.map((r) => r.listing_id)));
       const { data: lst } = await supabase.from("listings").select("id,product_name,unit,photo_url").in("id", listingIds);
