@@ -1,11 +1,8 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useRequirement, useCreateDeal, useRequireAuth } from "@/lib/queries";
+import { useRequirement, useRequireAuth } from "@/lib/queries";
 import { rupees } from "@/lib/format";
-import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, Sparkles, MessageSquare, Loader2 } from "lucide-react";
-import { waLink } from "@/lib/whatsapp";
-import { toast } from "sonner";
+import { MapPin, Calendar, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/requirements/$id")({
   head: () => ({ meta: [{ title: "Requirement — AgriConnect" }] }),
@@ -18,13 +15,11 @@ export const Route = createFileRoute("/requirements/$id")({
 
 function Detail() {
   const { id } = Route.useParams();
-  const navigate = useNavigate();
-  const { user } = useRequireAuth();
+  useRequireAuth();
   const { data: req, isLoading } = useRequirement(id);
-  const createDeal = useCreateDeal();
 
   if (isLoading) return <div className="py-20 grid place-items-center"><Loader2 className="size-6 animate-spin" /></div>;
-  if (!req) {
+  if (!req || !req.id) {
     return (
       <div className="text-center py-20">
         <p className="text-muted-foreground">Requirement not found</p>
@@ -34,44 +29,23 @@ function Detail() {
   }
 
   const offer = Number(req.target_price_paise ?? 0);
-  const buyer = (req as any).buyer;
-
-  const startBargain = async () => {
-    if (!user) return;
-    try {
-      const deal = await createDeal.mutateAsync({
-        farmer_id: user.id,
-        buyer_id: req.buyer_id,
-        product_name: req.product_name,
-        quantity: req.quantity,
-        unit: req.unit,
-        agreed_price_paise: offer,
-        total_paise: offer * Number(req.quantity),
-        pickup_district: user.district ?? "",
-        drop_district: req.district,
-        status: "pending_payment",
-      });
-      toast.success("Bargain started. Buyer notified.");
-      navigate({ to: "/deals/$id", params: { id: deal.id } });
-    } catch (err: any) {
-      toast.error(err.message || "Failed");
-    }
-  };
+  const quantity = Number(req.quantity ?? 0);
+  const unit = req.unit ?? "kg";
 
   return (
     <div className="max-w-2xl mx-auto">
       <p className="text-xs font-bold uppercase tracking-widest text-brand-clay">Buyer requirement</p>
       <h1 className="mt-2 font-serif italic text-4xl text-brand-green">
-        {Number(req.quantity)}{req.unit} {req.product_name}
+        {quantity}{unit} {req.product_name}
       </h1>
       <div className="mt-3 flex items-baseline gap-3">
         <span className="text-3xl font-bold text-brand-green text-rupee">{offer ? rupees(offer) : "—"}</span>
-        <span className="text-sm text-muted-foreground">per {req.unit} offered</span>
+        <span className="text-sm text-muted-foreground">per {unit} offered</span>
       </div>
 
       <div className="mt-6 rounded-2xl bg-card ring-1 ring-border p-5">
-        <p className="font-semibold">{buyer?.name ?? "Buyer"}</p>
-        <p className="text-xs text-muted-foreground">★ {Number(buyer?.rating ?? 5).toFixed(1)} · {buyer?.district}, {buyer?.state}</p>
+        <p className="font-semibold">Verified buyer</p>
+        <p className="text-xs text-muted-foreground">Buyer identity is shared once you're matched on a deal.</p>
         <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
           <div className="rounded-xl bg-brand-cream/60 ring-1 ring-border p-3">
             <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -90,20 +64,9 @@ function Detail() {
 
       {req.notes && <p className="mt-6 text-sm text-muted-foreground leading-relaxed">{req.notes}</p>}
 
-      <div className="mt-8 grid gap-3">
-        <Button onClick={startBargain} disabled={createDeal.isPending} className="h-12 bg-brand-clay text-white font-bold">
-          <Sparkles className="size-4 mr-2" /> {createDeal.isPending ? "Starting…" : "Start AI Bargaining"}
-        </Button>
-        {buyer?.phone && waLink(buyer.phone, `Hi, I can supply ${req.product_name}.`) && (
-          <a
-            href={waLink(buyer.phone, `Hi, I can supply ${req.product_name}.`)!}
-            target="_blank" rel="noreferrer"
-            className="h-12 grid place-items-center rounded-md bg-emerald-600 text-white text-sm font-bold"
-          >
-            <MessageSquare className="size-4 inline mr-1.5" /> Message buyer on WhatsApp
-          </a>
-        )}
-      </div>
+      <p className="mt-8 text-xs text-muted-foreground">
+        To connect with this buyer, post a matching listing — buyers will send you an interest request and share contact details on acceptance.
+      </p>
     </div>
   );
 }

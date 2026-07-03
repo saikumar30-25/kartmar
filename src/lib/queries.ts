@@ -19,14 +19,25 @@ export type PartnerProfileInsert = Database["public"]["Tables"]["partner_profile
 export type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
 export type InterestRow = Database["public"]["Tables"]["interest_requests"]["Row"];
 export type InterestInsert = Database["public"]["Tables"]["interest_requests"]["Insert"];
+export type InterestContactInsert = Database["public"]["Tables"]["interest_request_contacts"]["Insert"];
 
 // ---------- Interest requests (Buyer -> Farmer) ----------
 export function useCreateInterest() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: InterestInsert) => {
-      const { data, error } = await supabase.from("interest_requests").insert(input).select().single();
+    mutationFn: async ({
+      interest,
+      contact,
+    }: {
+      interest: InterestInsert;
+      contact: { buyer_phone: string | null; buyer_address: string; buyer_pincode: string | null };
+    }) => {
+      const { data, error } = await supabase.from("interest_requests").insert(interest).select().single();
       if (error) throw error;
+      const { error: cErr } = await supabase
+        .from("interest_request_contacts")
+        .insert({ interest_id: data.id, ...contact });
+      if (cErr) throw cErr;
       return data;
     },
     onSuccess: () => {
@@ -50,17 +61,40 @@ export function useMyInterests() {
       if (error) throw error;
       if (!data?.length) return [];
       const ids = Array.from(new Set(data.flatMap((r) => [r.farmer_id, r.buyer_id])));
-      const { data: profs } = await supabase.from("profiles").select("id,name,phone,district,state").in("id", ids);
-      const pm = new Map((profs ?? []).map((p) => [p.id, p]));
+      const { data: profs } = await supabase
+        .from("profiles_public")
+        .select("id,name,district,state")
+        .in("id", ids);
+      const { data: contactProfs } = await supabase
+        .from("profiles")
+        .select("id,phone")
+        .in("id", ids);
+      const pm = new Map((profs ?? []).map((p) => [p.id, p as any]));
+      for (const cp of contactProfs ?? []) {
+        const existing = pm.get(cp.id) ?? { id: cp.id };
+        pm.set(cp.id, { ...existing, phone: cp.phone });
+      }
       const listingIds = Array.from(new Set(data.map((r) => r.listing_id)));
       const { data: lst } = await supabase.from("listings").select("id,product_name,unit,photo_url").in("id", listingIds);
       const lm = new Map((lst ?? []).map((l) => [l.id, l]));
-      return data.map((r) => ({
-        ...r,
-        farmer: pm.get(r.farmer_id) ?? null,
-        buyer: pm.get(r.buyer_id) ?? null,
-        listing: lm.get(r.listing_id) ?? null,
-      }));
+      const interestIds = data.map((r) => r.id);
+      const { data: contacts } = await supabase
+        .from("interest_request_contacts")
+        .select("interest_id,buyer_phone,buyer_address,buyer_pincode")
+        .in("interest_id", interestIds);
+      const cm = new Map((contacts ?? []).map((c) => [c.interest_id, c]));
+      return data.map((r) => {
+        const c = cm.get(r.id);
+        return {
+          ...r,
+          farmer: pm.get(r.farmer_id) ?? null,
+          buyer: pm.get(r.buyer_id) ?? null,
+          listing: lm.get(r.listing_id) ?? null,
+          buyer_phone: c?.buyer_phone ?? null,
+          buyer_address: c?.buyer_address ?? null,
+          buyer_pincode: c?.buyer_pincode ?? null,
+        };
+      });
     },
     enabled: !!user,
   });
@@ -229,8 +263,8 @@ export function useListing(id: string) {
       if (error) throw error;
       if (!data) return null;
       const { data: farmer } = await supabase
-        .from("profiles")
-        .select("id,name,district,state,rating,phone,is_verified")
+        .from("profiles_public")
+        .select("id,name,district,state,rating,is_verified")
         .eq("id", data.farmer_id)
         .maybeSingle();
       return { ...data, farmer };
@@ -256,7 +290,7 @@ export function useRequirements() {
     queryKey: ["requirements"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("requirements")
+        .from("requirements_public")
         .select("*")
         .eq("status", "open")
         .order("created_at", { ascending: false });
@@ -270,15 +304,10 @@ export function useRequirement(id: string) {
   return useQuery({
     queryKey: ["requirement", id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("requirements").select("*").eq("id", id).maybeSingle();
+      const { data, error } = await supabase.from("requirements_public").select("*").eq("id", id).maybeSingle();
       if (error) throw error;
       if (!data) return null;
-      const { data: buyer } = await supabase
-        .from("profiles")
-        .select("id,name,district,state,rating,phone")
-        .eq("id", data.buyer_id)
-        .maybeSingle();
-      return { ...data, buyer };
+      return { ...data, buyer: null as { id: string; name: string; district: string | null; state: string | null; rating: number; phone: string | null } | null };
     },
   });
 }
