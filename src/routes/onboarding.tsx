@@ -238,6 +238,7 @@ function OnboardingForm({ role, onDone }: { role: Role; onDone: () => Promise<vo
             district: commonParsed.data.district,
             state: commonParsed.data.state,
             license_photo_url: licenseUrl,
+            license_number: licenseNumber.trim().toUpperCase(),
             vehicle_photo_url: vehicleUrl,
             details_completed: true,
             verification_status: "pending",
