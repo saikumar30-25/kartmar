@@ -122,15 +122,51 @@ export type Database = {
             referencedRelation: "requirements"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "deals_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "requirements_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      interest_request_contacts: {
+        Row: {
+          buyer_address: string
+          buyer_phone: string | null
+          buyer_pincode: string | null
+          created_at: string
+          interest_id: string
+        }
+        Insert: {
+          buyer_address: string
+          buyer_phone?: string | null
+          buyer_pincode?: string | null
+          created_at?: string
+          interest_id: string
+        }
+        Update: {
+          buyer_address?: string
+          buyer_phone?: string | null
+          buyer_pincode?: string | null
+          created_at?: string
+          interest_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interest_request_contacts_interest_id_fkey"
+            columns: ["interest_id"]
+            isOneToOne: true
+            referencedRelation: "interest_requests"
+            referencedColumns: ["id"]
+          },
         ]
       }
       interest_requests: {
         Row: {
-          buyer_address: string
           buyer_id: string
           buyer_name: string
-          buyer_phone: string | null
-          buyer_pincode: string | null
           created_at: string
           farmer_id: string
           farmer_response: string | null
@@ -144,11 +180,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          buyer_address: string
           buyer_id: string
           buyer_name: string
-          buyer_phone?: string | null
-          buyer_pincode?: string | null
           created_at?: string
           farmer_id: string
           farmer_response?: string | null
@@ -162,11 +195,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          buyer_address?: string
           buyer_id?: string
           buyer_name?: string
-          buyer_phone?: string | null
-          buyer_pincode?: string | null
           created_at?: string
           farmer_id?: string
           farmer_response?: string | null
@@ -511,7 +541,84 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      profiles_public: {
+        Row: {
+          avatar_url: string | null
+          district: string | null
+          id: string | null
+          is_verified: boolean | null
+          language: string | null
+          name: string | null
+          rating: number | null
+          state: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          district?: string | null
+          id?: string | null
+          is_verified?: boolean | null
+          language?: string | null
+          name?: string | null
+          rating?: number | null
+          state?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          district?: string | null
+          id?: string | null
+          is_verified?: boolean | null
+          language?: string | null
+          name?: string | null
+          rating?: number | null
+          state?: string | null
+        }
+        Relationships: []
+      }
+      requirements_public: {
+        Row: {
+          created_at: string | null
+          district: string | null
+          id: string | null
+          needed_by: string | null
+          notes: string | null
+          product_name: string | null
+          quantity: number | null
+          state: string | null
+          status: Database["public"]["Enums"]["requirement_status"] | null
+          target_price_paise: number | null
+          unit: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          district?: string | null
+          id?: string | null
+          needed_by?: string | null
+          notes?: string | null
+          product_name?: string | null
+          quantity?: number | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["requirement_status"] | null
+          target_price_paise?: number | null
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          district?: string | null
+          id?: string | null
+          needed_by?: string | null
+          notes?: string | null
+          product_name?: string | null
+          quantity?: number | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["requirement_status"] | null
+          target_price_paise?: number | null
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
