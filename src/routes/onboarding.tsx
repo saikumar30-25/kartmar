@@ -173,6 +173,40 @@ function OnboardingForm({ role, onDone }: { role: Role; onDone: () => Promise<vo
       }
       if (!licenseUrl) return toast.error("Driving licence photo is required.");
       if (!vehicleUrl) return toast.error("Vehicle photo is required.");
+      if (!licenseNumber.trim()) return toast.error("Driving licence number is required.");
+    }
+
+    // AI validation gate
+    setAiChecking(true);
+    setAiIssues([]);
+    try {
+      const result = await validateOnboarding({
+        data: {
+          role,
+          name: commonParsed.data.name,
+          phone: commonParsed.data.phone,
+          address: commonParsed.data.address,
+          district: commonParsed.data.district,
+          state: commonParsed.data.state,
+          pincode: commonParsed.data.pincode,
+          vehicle_type: role === "partner" ? vehicleType : null,
+          vehicle_number: role === "partner" ? vehicleNumber : null,
+          capacity_kg: role === "partner" ? capacity : null,
+          aadhaar_last4: role === "partner" ? aadhaar : null,
+          license_number: role === "partner" ? licenseNumber : null,
+        },
+      });
+      if (!result.ok && result.issues.length > 0) {
+        setAiIssues(result.issues);
+        toast.error("AI review found issues — please correct them and try again.");
+        setAiChecking(false);
+        return;
+      }
+    } catch (e: any) {
+      console.error(e);
+      // Fail-open: proceed if AI check itself errors
+    } finally {
+      setAiChecking(false);
     }
 
     setSubmitting(true);
