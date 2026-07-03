@@ -263,8 +263,8 @@ export function useListing(id: string) {
       if (error) throw error;
       if (!data) return null;
       const { data: farmer } = await supabase
-        .from("profiles")
-        .select("id,name,district,state,rating,phone,is_verified")
+        .from("profiles_public")
+        .select("id,name,district,state,rating,is_verified")
         .eq("id", data.farmer_id)
         .maybeSingle();
       return { ...data, farmer };
@@ -290,7 +290,7 @@ export function useRequirements() {
     queryKey: ["requirements"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("requirements")
+        .from("requirements_public")
         .select("*")
         .eq("status", "open")
         .order("created_at", { ascending: false });
@@ -304,15 +304,10 @@ export function useRequirement(id: string) {
   return useQuery({
     queryKey: ["requirement", id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("requirements").select("*").eq("id", id).maybeSingle();
+      const { data, error } = await supabase.from("requirements_public").select("*").eq("id", id).maybeSingle();
       if (error) throw error;
       if (!data) return null;
-      const { data: buyer } = await supabase
-        .from("profiles")
-        .select("id,name,district,state,rating,phone")
-        .eq("id", data.buyer_id)
-        .maybeSingle();
-      return { ...data, buyer };
+      return { ...data, buyer: null as { id: string; name: string; district: string | null; state: string | null; rating: number; phone: string | null } | null };
     },
   });
 }
