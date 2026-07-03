@@ -19,14 +19,25 @@ export type PartnerProfileInsert = Database["public"]["Tables"]["partner_profile
 export type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
 export type InterestRow = Database["public"]["Tables"]["interest_requests"]["Row"];
 export type InterestInsert = Database["public"]["Tables"]["interest_requests"]["Insert"];
+export type InterestContactInsert = Database["public"]["Tables"]["interest_request_contacts"]["Insert"];
 
 // ---------- Interest requests (Buyer -> Farmer) ----------
 export function useCreateInterest() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: InterestInsert) => {
-      const { data, error } = await supabase.from("interest_requests").insert(input).select().single();
+    mutationFn: async ({
+      interest,
+      contact,
+    }: {
+      interest: InterestInsert;
+      contact: { buyer_phone: string | null; buyer_address: string; buyer_pincode: string | null };
+    }) => {
+      const { data, error } = await supabase.from("interest_requests").insert(interest).select().single();
       if (error) throw error;
+      const { error: cErr } = await supabase
+        .from("interest_request_contacts")
+        .insert({ interest_id: data.id, ...contact });
+      if (cErr) throw cErr;
       return data;
     },
     onSuccess: () => {
