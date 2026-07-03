@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { ProductCard } from "@/components/ProductCard";
 import { useAuth } from "@/lib/auth";
-import { useListings, useRequirements, useMyDeals, useRequireAuth } from "@/lib/queries";
+import { useListings, useRequirements, useMyDeals, useRequireAuth, useForbidPartner } from "@/lib/queries";
 import { rupees } from "@/lib/format";
 import { Sparkles, TrendingUp, IndianRupee, Star, Package, Plus, MessageSquare } from "lucide-react";
 
@@ -16,7 +16,7 @@ export const Route = createFileRoute("/home")({
 });
 
 function Home() {
-  useRequireAuth();
+  useRequireAuth(); useForbidPartner();
   const { user } = useAuth();
   const { data: listings = [] } = useListings();
   const { data: requirements = [] } = useRequirements();
