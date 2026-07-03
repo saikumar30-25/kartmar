@@ -61,17 +61,40 @@ export function useMyInterests() {
       if (error) throw error;
       if (!data?.length) return [];
       const ids = Array.from(new Set(data.flatMap((r) => [r.farmer_id, r.buyer_id])));
-      const { data: profs } = await supabase.from("profiles").select("id,name,phone,district,state").in("id", ids);
-      const pm = new Map((profs ?? []).map((p) => [p.id, p]));
+      const { data: profs } = await supabase
+        .from("profiles_public")
+        .select("id,name,district,state")
+        .in("id", ids);
+      const { data: contactProfs } = await supabase
+        .from("profiles")
+        .select("id,phone")
+        .in("id", ids);
+      const pm = new Map((profs ?? []).map((p) => [p.id, p as any]));
+      for (const cp of contactProfs ?? []) {
+        const existing = pm.get(cp.id) ?? { id: cp.id };
+        pm.set(cp.id, { ...existing, phone: cp.phone });
+      }
       const listingIds = Array.from(new Set(data.map((r) => r.listing_id)));
       const { data: lst } = await supabase.from("listings").select("id,product_name,unit,photo_url").in("id", listingIds);
       const lm = new Map((lst ?? []).map((l) => [l.id, l]));
-      return data.map((r) => ({
-        ...r,
-        farmer: pm.get(r.farmer_id) ?? null,
-        buyer: pm.get(r.buyer_id) ?? null,
-        listing: lm.get(r.listing_id) ?? null,
-      }));
+      const interestIds = data.map((r) => r.id);
+      const { data: contacts } = await supabase
+        .from("interest_request_contacts")
+        .select("interest_id,buyer_phone,buyer_address,buyer_pincode")
+        .in("interest_id", interestIds);
+      const cm = new Map((contacts ?? []).map((c) => [c.interest_id, c]));
+      return data.map((r) => {
+        const c = cm.get(r.id);
+        return {
+          ...r,
+          farmer: pm.get(r.farmer_id) ?? null,
+          buyer: pm.get(r.buyer_id) ?? null,
+          listing: lm.get(r.listing_id) ?? null,
+          buyer_phone: c?.buyer_phone ?? null,
+          buyer_address: c?.buyer_address ?? null,
+          buyer_pincode: c?.buyer_pincode ?? null,
+        };
+      });
     },
     enabled: !!user,
   });
