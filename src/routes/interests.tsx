@@ -78,13 +78,21 @@ function ReceivedCard({ r }: { r: any }) {
   const [reply, setReply] = useState("");
   const [showReply, setShowReply] = useState(false);
   const buyerPhone = r.buyer?.phone ?? r.buyer_phone;
-  const waMsgText = `Hi ${r.buyer_name}, regarding your interest in ${r.listing?.product_name ?? "my listing"} on AgriConnect.`;
+  const productName = r.listing?.product_name ?? "your order";
+  const waMsgText = `Hi ${r.buyer_name}, this is regarding your interest in ${productName} on Kartmar.`;
 
   const act = async (status: "accepted" | "rejected") => {
     try {
       await respond.mutateAsync({ id: r.id, status, response: reply || undefined });
       toast.success(status === "accepted" ? "Buyer notified — accepted" : "Buyer notified — declined");
       setShowReply(false);
+      // Auto-open branded WhatsApp to buyer if phone available.
+      const brandedMsg =
+        status === "accepted"
+          ? `Hi ${r.buyer_name}, good news from Kartmar 🌾 — your order for ${productName}${r.quantity ? ` (${r.quantity} ${r.listing?.unit ?? ""})` : ""} has been ACCEPTED. ${reply ? `Note: ${reply}. ` : ""}Please open Kartmar to confirm and complete payment.`
+          : `Hi ${r.buyer_name}, unfortunately your order for ${productName} on Kartmar has been declined.${reply ? ` Reason: ${reply}.` : ""} You can browse other listings anytime.`;
+      const link = waLink(buyerPhone, brandedMsg);
+      if (link) window.open(link, "_blank", "noopener");
     } catch (e: any) {
       toast.error(e.message);
     }
