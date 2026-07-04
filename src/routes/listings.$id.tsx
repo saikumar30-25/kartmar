@@ -139,7 +139,7 @@ function Detail() {
           </div>
           {farmer?.phone && (
             <a
-              href={waLink(farmer.phone, `Hi, interested in your ${listing.product_name} listing on AgriConnect.`)!}
+              href={waLink(farmer.phone, `Hi, interested in your ${listing.product_name} listing on Kartmar.`)!}
               target="_blank" rel="noreferrer"
               className="mt-3 w-full block text-center rounded-lg bg-emerald-600 text-white py-2.5 text-sm font-bold"
             >
