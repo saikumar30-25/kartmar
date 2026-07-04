@@ -330,7 +330,7 @@ function ContactCard({
       <div className="grid sm:grid-cols-2 gap-3">
         {others.map(({ role, contact }) => {
           if (!contact) return null;
-          const waMsg = `Hi ${contact.name}, regarding our AgriConnect deal for ${deal.product_name}.`;
+          const waMsg = `Hi ${contact.name}, regarding our Kartmar deal for ${deal.product_name}.`;
           const wa = waLink(contact.phone, waMsg);
           const tel = telLink(contact.phone);
           return (

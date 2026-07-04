@@ -164,7 +164,7 @@ function SentCard({ r }: { r: any }) {
   const farmerPhone = r.farmer?.phone;
   const farmerAddress = r.farmer?.address;
   const farmerPincode = r.farmer?.pincode;
-  const waMsgText = `Hi ${r.farmer?.name ?? ""}, I sent an interest request for ${r.listing?.product_name ?? "your listing"} on AgriConnect.`;
+  const waMsgText = `Hi ${r.farmer?.name ?? ""}, I sent an interest request for ${r.listing?.product_name ?? "your listing"} on Kartmar.`;
   return (
     <div className="rounded-2xl bg-card ring-1 ring-border p-4">
       <div className="flex items-start gap-3">
