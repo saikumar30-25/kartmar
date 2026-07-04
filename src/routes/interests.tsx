@@ -8,6 +8,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { rupees } from "@/lib/format";
 import { waLink, telLink } from "@/lib/whatsapp";
+import { logEvent, openWhatsAppWithLog } from "@/lib/notification-log";
+import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/interests")({
   head: () => ({ meta: [{ title: "Interests — AgriConnect" }] }),
