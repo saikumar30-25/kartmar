@@ -63,6 +63,24 @@ export function NotificationBridge() {
         { event: "INSERT", schema: "public", table: "deals", filter: `farmer_id=eq.${user.id}` },
         () => qc.invalidateQueries({ queryKey: ["deals"] }),
       )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "trips" },
+        (payload) => {
+          const t: any = payload.new;
+          const prev: any = payload.old;
+          if (t.partner_id && !prev.partner_id) {
+            toast.success("🚚 Delivery partner accepted your trip", {
+              description: `${t.pickup_district} → ${t.drop_district}`,
+              action: { label: "Open", onClick: () => navigate({ to: "/deals" }) },
+            });
+            qc.invalidateQueries({ queryKey: ["trip_for_deal"] });
+            qc.invalidateQueries({ queryKey: ["deals"] });
+          } else if (t.status !== prev.status) {
+            qc.invalidateQueries({ queryKey: ["trip_for_deal"] });
+          }
+        },
+      )
       .subscribe();
 
     return () => {
