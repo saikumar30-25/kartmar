@@ -76,6 +76,7 @@ function statusPill(status: string) {
 }
 
 function ReceivedCard({ r }: { r: any }) {
+  const { user } = useAuth();
   const respond = useRespondInterest();
   const [reply, setReply] = useState("");
   const [showReply, setShowReply] = useState(false);
@@ -88,15 +89,36 @@ function ReceivedCard({ r }: { r: any }) {
       await respond.mutateAsync({ id: r.id, status, response: reply || undefined });
       toast.success(status === "accepted" ? "Buyer notified — accepted" : "Buyer notified — declined");
       setShowReply(false);
-      // Auto-open branded WhatsApp to buyer if phone available.
       const brandedMsg =
         status === "accepted"
           ? `Hi ${r.buyer_name}, good news from Kartmar 🌾 — your order for ${productName}${r.quantity ? ` (${r.quantity} ${r.listing?.unit ?? ""})` : ""} has been ACCEPTED. ${reply ? `Note: ${reply}. ` : ""}Please open Kartmar to confirm and complete payment.`
           : `Hi ${r.buyer_name}, unfortunately your order for ${productName} on Kartmar has been declined.${reply ? ` Reason: ${reply}.` : ""} You can browse other listings anytime.`;
-      const link = waLink(buyerPhone, brandedMsg);
-      if (link) window.open(link, "_blank", "noopener");
+      if (user) {
+        logEvent(user.id, {
+          kind: status === "accepted" ? "interest_accepted" : "interest_rejected",
+          title: status === "accepted" ? `Accepted order from ${r.buyer_name}` : `Declined order from ${r.buyer_name}`,
+          description: productName,
+          status: "sent",
+          meta: { interest_id: r.id, reply },
+        });
+        openWhatsAppWithLog(user.id, waLink(buyerPhone, brandedMsg), {
+          to: r.buyer_name,
+          phone: buyerPhone,
+          context: status === "accepted" ? "Interest accepted → buyer" : "Interest declined → buyer",
+          message: brandedMsg,
+        });
+      }
     } catch (e: any) {
       toast.error(e.message);
+      if (user) {
+        logEvent(user.id, {
+          kind: status === "accepted" ? "interest_accepted" : "interest_rejected",
+          title: `Failed to ${status === "accepted" ? "accept" : "decline"} order`,
+          description: e?.message ?? "Unknown error",
+          status: "failed",
+          meta: { interest_id: r.id },
+        });
+      }
     }
   };
 
