@@ -93,6 +93,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <DropdownMenuContent align="end" className="w-80">
                   <DropdownMenuLabel>Notifications</DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate({ to: "/notifications" })} className="text-xs font-semibold text-brand-clay">
+                    View activity log →
+                  </DropdownMenuItem>
                   {notifications.map((n) => (
                     <DropdownMenuItem key={n.id} className="flex items-start gap-2 py-2">
                       <span className={`mt-1 size-1.5 rounded-full ${n.read ? "bg-muted-foreground/30" : "bg-brand-clay"}`} />
