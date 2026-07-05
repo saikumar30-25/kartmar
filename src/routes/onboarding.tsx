@@ -176,9 +176,10 @@ function OnboardingForm({ role, onDone }: { role: Role; onDone: () => Promise<vo
       if (!licenseNumber.trim()) return toast.error("Driving licence number is required.");
     }
 
-    // AI validation gate
+    // AI validation gate (mandatory for delivery partners → auto-approve or reject)
     setAiChecking(true);
     setAiIssues([]);
+    let aiApproved = true;
     try {
       const result = await validateOnboarding({
         data: {
@@ -202,9 +203,11 @@ function OnboardingForm({ role, onDone }: { role: Role; onDone: () => Promise<vo
         setAiChecking(false);
         return;
       }
+      aiApproved = result.ok;
     } catch (e: any) {
       console.error(e);
-      // Fail-open: proceed if AI check itself errors
+      // Fail-open for buyer/farmer; for partner default to pending so nothing gets auto-approved on error
+      if (role === "partner") aiApproved = false;
     } finally {
       setAiChecking(false);
     }
@@ -227,7 +230,7 @@ function OnboardingForm({ role, onDone }: { role: Role; onDone: () => Promise<vo
         .eq("id", user.id);
       if (profErr) throw profErr;
 
-      // 2. Partner-only insert/update
+      // 2. Partner-only insert/update — AI auto-approves when all checks pass.
       if (role === "partner") {
         const { error: partnerErr } = await supabase.from("partner_profiles").upsert(
           {
@@ -241,7 +244,8 @@ function OnboardingForm({ role, onDone }: { role: Role; onDone: () => Promise<vo
             license_number: licenseNumber.trim().toUpperCase(),
             vehicle_photo_url: vehicleUrl,
             details_completed: true,
-            verification_status: "pending",
+            verification_status: aiApproved ? "approved" : "pending",
+            reviewed_at: aiApproved ? new Date().toISOString() : null,
           },
           { onConflict: "id" },
         );
@@ -249,7 +253,11 @@ function OnboardingForm({ role, onDone }: { role: Role; onDone: () => Promise<vo
       }
 
       await onDone();
-      toast.success("Profile saved! Welcome to AgriConnect.");
+      if (role === "partner" && aiApproved) {
+        toast.success("✅ AI verified your documents — you're approved! Go online to accept trips.");
+      } else {
+        toast.success("Profile saved! Welcome to Kartmar.");
+      }
       navigate({ to: role === "partner" ? "/partner" : "/home" });
     } catch (err: any) {
       toast.error(err.message || "Could not save your details");
@@ -314,7 +322,7 @@ function OnboardingForm({ role, onDone }: { role: Role; onDone: () => Promise<vo
               <DocTile label="Driving licence" url={licenseUrl} uploading={uploading === "license"} onPick={() => licenseRef.current?.click()} />
               <DocTile label="Vehicle photo" url={vehicleUrl} uploading={uploading === "vehicle"} onPick={() => vehicleRef.current?.click()} />
             </div>
-            <p className="text-[11px] text-muted-foreground">Only you and platform admins can view these documents. Your account stays in <b>pending</b> until an admin approves it.</p>
+            <p className="text-[11px] text-muted-foreground">Only you and platform admins can view these documents. <strong>AI verifies your details instantly</strong> — no admin queue. If anything looks off, you'll be asked to correct it.</p>
           </Section>
         </>
       )}

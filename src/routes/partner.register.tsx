@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useRef, useState } from "react";
 import { useRegisterPartner, useMyPartnerProfile, useRequireAuth } from "@/lib/queries";
 import { uploadAndSign } from "@/lib/storage";
+import { validateOnboarding } from "@/lib/validate.functions";
 
 type VehicleType = "bike" | "tempo" | "pickup" | "mini_truck" | "tractor";
 
@@ -62,11 +63,44 @@ function Reg() {
     }
   };
 
+  const [aiChecking, setAiChecking] = useState(false);
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
     if (!licenseUrl) return toast.error("Driving licence photo is required.");
     if (!vehicleUrl) return toast.error("Vehicle photo is required.");
+
+    // AI check — auto-approve on success
+    setAiChecking(true);
+    let aiApproved = true;
+    try {
+      const result = await validateOnboarding({
+        data: {
+          role: "partner",
+          name: user.name,
+          phone: user.phone ?? "",
+          address: user.address ?? "",
+          district: district || user.district || "",
+          state: state || user.state || "",
+          pincode: user.pincode ?? "",
+          vehicle_type: vehicleType,
+          vehicle_number: vehicleNumber,
+          capacity_kg: capacity,
+        },
+      });
+      if (!result.ok && result.issues.length > 0) {
+        toast.error(`AI review: ${result.issues[0].message}`);
+        setAiChecking(false);
+        return;
+      }
+      aiApproved = result.ok;
+    } catch {
+      aiApproved = false;
+    } finally {
+      setAiChecking(false);
+    }
+
     try {
       await register.mutateAsync({
         id: user.id,
@@ -77,9 +111,10 @@ function Reg() {
         state: state || null,
         license_photo_url: licenseUrl,
         vehicle_photo_url: vehicleUrl,
-        verification_status: "pending",
+        verification_status: aiApproved ? "approved" : "pending",
+        reviewed_at: aiApproved ? new Date().toISOString() : null,
       });
-      toast.success("Submitted! Admin will review within 24 hours.");
+      toast.success(aiApproved ? "✅ AI approved — you can go online now!" : "Submitted for review.");
       navigate({ to: "/partner" });
     } catch (err: any) {
       toast.error(err.message || "Failed to register");
@@ -130,13 +165,13 @@ function Reg() {
               onPick={() => vehicleRef.current?.click()}
             />
           </div>
-          <p className="text-[11px] text-muted-foreground">Only you and platform admins can view these documents.</p>
+          <p className="text-[11px] text-muted-foreground">AI verifies your details instantly — no admin queue. If anything looks off, you'll be asked to correct it.</p>
         </Section>
 
         <div className="flex gap-2">
           <Button type="button" variant="outline" onClick={() => navigate({ to: "/partner" })} className="flex-1">Cancel</Button>
-          <Button type="submit" disabled={register.isPending} className="flex-1 gradient-accent text-white h-11 font-extrabold shadow-bold">
-            {register.isPending ? "Saving…" : "Submit for verification"}
+          <Button type="submit" disabled={register.isPending || aiChecking} className="flex-1 gradient-accent text-white h-11 font-extrabold shadow-bold">
+            {aiChecking ? "AI verifying…" : register.isPending ? "Saving…" : "AI verify & submit"}
           </Button>
         </div>
       </form>

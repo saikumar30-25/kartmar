@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Sparkles, MapPin, Calendar, Phone, MessageSquare, Loader2, HandHeart } from "lucide-react";
 import { waLink, telLink } from "@/lib/whatsapp";
+import { logEvent, openWhatsAppWithLog } from "@/lib/notification-log";
 import { useState } from "react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -84,7 +85,7 @@ function Detail() {
       return;
     }
     try {
-      await createInterest.mutateAsync({
+      const created = await createInterest.mutateAsync({
         interest: {
           listing_id: listing.id,
           farmer_id: listing.farmer_id,
@@ -100,9 +101,28 @@ function Detail() {
           buyer_pincode: user.pincode,
         },
       });
-      toast.success("Interest sent to farmer. You'll be notified when they respond.");
+      toast.success("Interest sent to farmer. WhatsApp opening to notify them…");
       setInterestOpen(false);
       setIMsg(""); setIQty(""); setIOffer("");
+
+      // AUTO WhatsApp to farmer with booking notification (before payment).
+      const farmerPhone = (listing as any).farmer?.phone ?? null;
+      const qtyText = iQty ? `${iQty} ${listing.unit}` : `${listing.quantity} ${listing.unit}`;
+      const offerText = iOffer ? ` at ₹${iOffer}/${listing.unit}` : "";
+      const msg = `Hi ${(listing as any).farmer?.name ?? "farmer"}, this is from Kartmar 🌾 — ${user.name} has BOOKED your ${listing.product_name} (${qtyText})${offerText}. Please open the Kartmar app to Accept or Reject this booking. Buyer contact will be shared once you accept.`;
+      openWhatsAppWithLog(user.id, waLink(farmerPhone, msg), {
+        to: (listing as any).farmer?.name ?? "Farmer",
+        phone: farmerPhone,
+        context: "New booking → farmer (pre-payment)",
+        message: msg,
+      });
+      logEvent(user.id, {
+        kind: "interest_received",
+        title: `Booked ${listing.product_name}`,
+        description: `Notification sent to farmer via WhatsApp + app`,
+        status: farmerPhone ? "sent" : "info",
+        meta: { interest_id: created.id, listing_id: listing.id },
+      });
     } catch (e: any) {
       toast.error(e.message || "Failed to send");
     }

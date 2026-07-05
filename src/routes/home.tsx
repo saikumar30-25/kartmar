@@ -1,13 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { ProductCard } from "@/components/ProductCard";
 import { useAuth } from "@/lib/auth";
-import { useListings, useRequirements, useMyDeals, useRequireAuth, useForbidPartner } from "@/lib/queries";
+import { useListings, useMyDeals, useRequireAuth, useForbidPartner } from "@/lib/queries";
 import { rupees } from "@/lib/format";
-import { Sparkles, TrendingUp, IndianRupee, Star, Package, Plus, MessageSquare } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  Search, MapPin, Sparkles, TrendingUp, Star, Package,
+  Plus, Leaf, Wheat, Apple, Carrot, Flame, Milk, Nut, Filter,
+} from "lucide-react";
 
 export const Route = createFileRoute("/home")({
-  head: () => ({ meta: [{ title: "Home — AgriConnect" }] }),
+  head: () => ({ meta: [{ title: "Kartmar — Fresh from farms near you" }] }),
   component: () => (
     <AppShell>
       <Home />
@@ -15,103 +19,263 @@ export const Route = createFileRoute("/home")({
   ),
 });
 
+const CATEGORIES = [
+  { key: "all", label: "All", icon: Sparkles },
+  { key: "vegetables", label: "Vegetables", icon: Carrot },
+  { key: "fruits", label: "Fruits", icon: Apple },
+  { key: "grains", label: "Grains", icon: Wheat },
+  { key: "spices", label: "Spices", icon: Flame },
+  { key: "dairy", label: "Dairy", icon: Milk },
+  { key: "pulses", label: "Pulses", icon: Nut },
+  { key: "leafy", label: "Leafy", icon: Leaf },
+] as const;
+
 function Home() {
   useRequireAuth(); useForbidPartner();
   const { user } = useAuth();
   const { data: listings = [] } = useListings();
-  const { data: requirements = [] } = useRequirements();
   const { data: deals = [] } = useMyDeals();
+
+  const [query, setQuery] = useState("");
+  const [cat, setCat] = useState<string>("all");
+  const [sort, setSort] = useState<"new" | "price_asc" | "price_desc">("new");
+  const [near, setNear] = useState(true);
+
+  const userDistrict = user?.district ?? null;
+
+  // Top markets = districts with most active listings
+  const markets = useMemo(() => {
+    const m = new Map<string, { district: string; state: string | null; count: number; sample?: any }>();
+    for (const l of listings) {
+      const key = `${l.district}`;
+      const cur = m.get(key) ?? { district: l.district!, state: l.state, count: 0, sample: l };
+      cur.count += 1;
+      if (!cur.sample?.photo_url && l.photo_url) cur.sample = l;
+      m.set(key, cur);
+    }
+    return Array.from(m.values()).sort((a, b) => b.count - a.count).slice(0, 8);
+  }, [listings]);
+
+  const topFarmers = useMemo(() => {
+    const m = new Map<string, { id: string; count: number; district: string | null; sample?: any }>();
+    for (const l of listings) {
+      const cur = m.get(l.farmer_id) ?? { id: l.farmer_id, count: 0, district: l.district, sample: l };
+      cur.count += 1;
+      if (!cur.sample?.photo_url && l.photo_url) cur.sample = l;
+      m.set(l.farmer_id, cur);
+    }
+    return Array.from(m.values()).sort((a, b) => b.count - a.count).slice(0, 6);
+  }, [listings]);
+
+  const filtered = useMemo(() => {
+    let out = listings.slice();
+    if (near && userDistrict) out = out.filter((l) => l.district === userDistrict).concat(out.filter((l) => l.district !== userDistrict));
+    if (cat !== "all") out = out.filter((l) => (l.category ?? "").toLowerCase() === cat);
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      out = out.filter((l) =>
+        l.product_name.toLowerCase().includes(q) ||
+        (l.district ?? "").toLowerCase().includes(q) ||
+        (l.category ?? "").toLowerCase().includes(q),
+      );
+    }
+    if (sort === "price_asc") out.sort((a, b) => Number(a.price_paise) - Number(b.price_paise));
+    if (sort === "price_desc") out.sort((a, b) => Number(b.price_paise) - Number(a.price_paise));
+    if (sort === "new") out.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    return out;
+  }, [listings, cat, query, sort, near, userDistrict]);
 
   if (!user) return null;
 
   const greeting = `${new Date().getHours() < 12 ? "Good morning" : "Good evening"}, ${user.name.split(" ")[0]}`;
-  const earnings = deals
-    .filter((d) => d.farmer_id === user.id && (d.status === "delivered" || d.status === "completed"))
-    .reduce((sum, d) => sum + Number(d.total_paise), 0);
+
+
+
+  const activeDeals = deals.filter((d) => d.status !== "completed" && d.status !== "cancelled").length;
 
   return (
-    <div className="space-y-8">
-      <header>
-        <p className="text-xs font-bold uppercase tracking-widest text-brand-moss">
-          {user.role === "farmer" ? "Farmer dashboard" : user.role === "owner" ? "Buyer dashboard" : "Dashboard"}
-        </p>
-        <h1 className="font-serif italic text-4xl text-brand-green mt-1">{greeting}</h1>
-      </header>
-
-      <section className="grid sm:grid-cols-3 gap-4">
-        <Stat icon={Package} label="Active deals" value={String(deals.filter((d) => d.status !== "completed" && d.status !== "cancelled").length).padStart(2, "0")} tone="moss" />
-        <Stat icon={IndianRupee} label="Earnings (delivered)" value={rupees(earnings)} tone="green" />
-        <Stat icon={Star} label="Rating" value={`${user.rating} ★`} tone="clay" />
-      </section>
-
-      <section className="rounded-3xl bg-brand-green text-brand-cream p-6 relative overflow-hidden">
-        <div className="absolute -right-10 -top-10 size-40 bg-brand-moss/40 rounded-full blur-3xl" />
-        <div className="relative flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <p className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold bg-brand-clay/90 text-white rounded-full px-2.5 py-1">
-              <Sparkles className="size-3" /> AI insight
-            </p>
-            <h2 className="mt-3 font-serif italic text-2xl max-w-lg">
-              {user.role === "owner"
-                ? "Tomato prices may rise 15% next week — buy this week."
-                : "Onion arrivals dropping in Nasik — hold stock 4 days for ~₹4/kg gain."}
-            </h2>
-            <div className="mt-4 flex flex-wrap gap-3">
-              {["Tomatoes ↑", "Chillies ↑", "Onions →"].map((d) => (
-                <span key={d} className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium ring-1 ring-white/15 inline-flex items-center gap-1.5">
-                  <TrendingUp className="size-3" /> {d}
-                </span>
-              ))}
-            </div>
+    <div className="space-y-6">
+      {/* Hero + search */}
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-green via-brand-green to-brand-moss text-brand-cream p-6 sm:p-8">
+        <div className="absolute -right-16 -top-16 size-56 bg-brand-clay/30 rounded-full blur-3xl" />
+        <div className="relative">
+          <p className="text-[11px] font-bold uppercase tracking-widest opacity-80">{greeting}</p>
+          <h1 className="mt-1 font-serif italic text-3xl sm:text-4xl max-w-xl">
+            Fresh from farms near {user.district ?? "you"} — delivered fast.
+          </h1>
+          <div className="mt-5 flex items-center gap-2 rounded-2xl bg-white text-foreground px-4 py-2.5 shadow-lg max-w-2xl">
+            <Search className="size-4 text-brand-moss shrink-0" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search tomatoes, onions, mangoes, districts…"
+              className="border-0 shadow-none focus-visible:ring-0 h-9 px-0"
+            />
+            <button
+              onClick={() => setNear((v) => !v)}
+              className={`shrink-0 hidden sm:flex items-center gap-1 text-xs font-bold rounded-full px-3 py-1.5 ${near ? "bg-brand-green text-brand-cream" : "bg-stone-100 text-stone-600"}`}
+            >
+              <MapPin className="size-3" /> Near me
+            </button>
           </div>
-          <Link to="/advisor" className="rounded-xl bg-brand-cream text-brand-green px-4 py-2.5 text-sm font-bold inline-flex items-center gap-2">
-            <MessageSquare className="size-4" /> Ask AgriAdvisor
-          </Link>
+          <div className="mt-4 flex flex-wrap gap-2 text-xs">
+            <Chip>Free pickup {'>'}5kg</Chip>
+            <Chip>Escrow-protected pay</Chip>
+            <Chip>AI-verified sellers</Chip>
+          </div>
         </div>
       </section>
 
+      {/* Stats strip */}
+      <section className="grid grid-cols-3 gap-3">
+        <MiniStat icon={Package} label="Active deals" value={String(activeDeals)} />
+        <MiniStat icon={TrendingUp} label="Fresh listings" value={String(listings.length)} />
+        <MiniStat icon={Star} label="Your rating" value={`${user.rating} ★`} />
+      </section>
+
+      {/* Category rail */}
       <section>
-        <div className="flex items-end justify-between mb-4">
-          <div>
-            <h2 className="font-serif italic text-2xl text-brand-green">
-              {user.role === "owner" ? "Fresh listings nearby" : "Buyer requirements near you"}
-            </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">From {user.district ?? "your area"}</p>
-          </div>
-          <Link to="/browse" className="text-xs font-bold text-brand-clay uppercase tracking-wider">View all →</Link>
+        <div className="flex items-end justify-between mb-3">
+          <h2 className="font-serif italic text-2xl text-brand-green">Shop by category</h2>
         </div>
-
-        {user.role === "owner" ? (
-          listings.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No listings yet.</p>
-          ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {listings.slice(0, 3).map((l) => <ProductCard key={l.id} listing={l} />)}
-            </div>
-          )
-        ) : requirements.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No requirements posted yet.</p>
-        ) : (
-          <div className="grid sm:grid-cols-2 gap-4">
-            {requirements.slice(0, 4).map((r) => (
-              <Link
-                key={r.id}
-                to="/requirements/$id"
-                params={{ id: r.id }}
-                className="rounded-2xl bg-card ring-1 ring-border p-5 hover:ring-brand-clay/40 transition"
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 no-scrollbar">
+          {CATEGORIES.map(({ key, label, icon: Icon }) => {
+            const active = cat === key;
+            return (
+              <button
+                key={key}
+                onClick={() => setCat(key)}
+                className={`shrink-0 flex flex-col items-center gap-2 rounded-2xl ring-1 transition px-4 py-3 min-w-[92px] ${
+                  active ? "bg-brand-green text-brand-cream ring-brand-green" : "bg-card text-foreground ring-border hover:ring-brand-clay/40"
+                }`}
               >
-                <div className="flex justify-between items-start gap-3">
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-brand-clay">Wanted</p>
-                    <h3 className="mt-1 font-semibold text-lg">{Number(r.quantity)}{r.unit} {r.product_name}</h3>
-                    <p className="text-xs text-muted-foreground mt-1">{r.district}, {r.state}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xl font-bold text-brand-green text-rupee">{r.target_price_paise ? rupees(Number(r.target_price_paise)) : "—"}</p>
-                    <p className="text-[10px] text-muted-foreground">per {r.unit}</p>
+                <Icon className="size-5" />
+                <span className="text-xs font-bold">{label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Top markets rail */}
+      {markets.length > 0 && (
+        <section>
+          <div className="flex items-end justify-between mb-3">
+            <div>
+              <h2 className="font-serif italic text-2xl text-brand-green">Top markets near you</h2>
+              <p className="text-xs text-muted-foreground">Districts with most fresh stock</p>
+            </div>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 no-scrollbar">
+            {markets.map((m) => (
+              <button
+                key={m.district}
+                onClick={() => { setQuery(m.district); setNear(false); }}
+                className="shrink-0 w-52 rounded-2xl overflow-hidden ring-1 ring-border bg-card text-left hover:ring-brand-clay/40 transition"
+              >
+                <div className="h-24 bg-brand-moss/20 relative">
+                  {m.sample?.photo_url && <img src={m.sample.photo_url} alt="" className="w-full h-full object-cover" />}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  <div className="absolute bottom-2 left-3 text-white">
+                    <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">{m.state}</p>
+                    <p className="font-bold text-sm">{m.district}</p>
                   </div>
                 </div>
-                {r.notes && <p className="mt-3 text-sm text-muted-foreground line-clamp-2">{r.notes}</p>}
+                <div className="p-3 flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">{m.count} listings</span>
+                  <span className="text-xs font-bold text-brand-clay">Explore →</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Top farmers rail */}
+      {topFarmers.length > 0 && (
+        <section>
+          <div className="flex items-end justify-between mb-3">
+            <div>
+              <h2 className="font-serif italic text-2xl text-brand-green">Top farmers</h2>
+              <p className="text-xs text-muted-foreground">Most active sellers this week</p>
+            </div>
+            <Link to="/browse" className="text-xs font-bold text-brand-clay uppercase tracking-wider">View all →</Link>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 no-scrollbar">
+            {topFarmers.map((f, i) => (
+              <div
+                key={f.id}
+                className="shrink-0 w-44 rounded-2xl bg-card ring-1 ring-border p-4 text-center hover:ring-brand-clay/40 transition"
+              >
+                <div className="size-14 mx-auto rounded-full bg-brand-green/10 text-brand-green grid place-items-center font-bold ring-2 ring-brand-clay/30">
+                  #{i + 1}
+                </div>
+                <p className="mt-2 font-semibold text-sm truncate">Farmer {f.id.slice(0, 6)}</p>
+                <p className="text-[11px] text-muted-foreground truncate">{f.district ?? "—"}</p>
+                <p className="mt-2 text-xs font-bold text-brand-clay">{f.count} products</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Fresh listings grid with filter bar */}
+      <section>
+        <div className="flex items-end justify-between mb-3 gap-3 flex-wrap">
+          <div>
+            <h2 className="font-serif italic text-2xl text-brand-green">
+              {cat === "all" ? "Fresh listings" : `Fresh ${CATEGORIES.find((c) => c.key === cat)?.label ?? ""}`}
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              {near && user.district ? `Prioritised from ${user.district}` : "From across India"}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter className="size-3.5 text-muted-foreground" />
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as any)}
+              className="h-9 rounded-full bg-card ring-1 ring-border text-xs font-semibold px-3"
+            >
+              <option value="new">Newest</option>
+              <option value="price_asc">Price: low → high</option>
+              <option value="price_desc">Price: high → low</option>
+            </select>
+          </div>
+        </div>
+
+        {filtered.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-8 text-center">No listings match. Try a different filter.</p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {filtered.slice(0, 24).map((l) => (
+              <Link
+                key={l.id}
+                to="/listings/$id"
+                params={{ id: l.id }}
+                className="rounded-2xl bg-card ring-1 ring-border overflow-hidden hover:ring-brand-clay/50 transition group"
+              >
+                <div className="aspect-square bg-brand-moss/15 relative overflow-hidden">
+                  {l.photo_url ? (
+                    <img src={l.photo_url} alt={l.product_name} className="w-full h-full object-cover group-hover:scale-105 transition" />
+                  ) : (
+                    <div className="w-full h-full grid place-items-center text-brand-moss"><Leaf className="size-8" /></div>
+                  )}
+                  {l.district === user.district && (
+                    <span className="absolute top-2 left-2 text-[9px] font-bold uppercase tracking-widest bg-white/95 text-brand-green rounded-full px-2 py-0.5">
+                      Near you
+                    </span>
+                  )}
+                </div>
+                <div className="p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-brand-moss truncate">{l.category}</p>
+                  <p className="mt-0.5 font-semibold text-sm truncate">{l.product_name}</p>
+                  <p className="text-[11px] text-muted-foreground truncate"><MapPin className="size-2.5 inline" /> {l.district}</p>
+                  <div className="mt-2 flex items-baseline gap-1">
+                    <span className="font-bold text-brand-green text-rupee">{rupees(Number(l.price_paise))}</span>
+                    <span className="text-[10px] text-muted-foreground">/{l.unit}</span>
+                  </div>
+                </div>
               </Link>
             ))}
           </div>
@@ -122,50 +286,30 @@ function Home() {
         <Link
           to={user.role === "farmer" ? "/post-listing" : "/post-requirement"}
           className="fixed bottom-24 right-6 lg:bottom-8 size-14 rounded-full bg-brand-clay text-white grid place-items-center shadow-xl shadow-brand-clay/30 hover:scale-105 transition z-30"
+          aria-label="Post new"
         >
           <Plus className="size-6" />
         </Link>
       )}
-
-      <section>
-        <h2 className="font-serif italic text-2xl text-brand-green mb-4">Recent deals</h2>
-        {deals.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No deals yet.</p>
-        ) : (
-          <div className="rounded-2xl bg-card ring-1 ring-border divide-y divide-border overflow-hidden">
-            {deals.slice(0, 5).map((d) => (
-              <Link key={d.id} to="/deals/$id" params={{ id: d.id }} className="flex items-center gap-4 p-4 hover:bg-brand-cream/50">
-                {d.photo_url ? <img src={d.photo_url} alt="" className="size-12 rounded-lg object-cover" /> : <div className="size-12 rounded-lg bg-brand-moss/15" />}
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm truncate">{Number(d.quantity)}{d.unit} {d.product_name}</p>
-                  <p className="text-xs text-muted-foreground">{new Date(d.created_at).toLocaleDateString()}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold text-rupee">{rupees(Number(d.total_paise))}</p>
-                  <DealStatus status={d.status} />
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
     </div>
   );
 }
 
-function Stat({ icon: Icon, label, value, tone }: { icon: typeof Package; label: string; value: string; tone: "green" | "clay" | "moss" }) {
-  const map = {
-    green: "bg-brand-green/5 ring-brand-green/15 text-brand-green",
-    clay: "bg-brand-clay/10 ring-brand-clay/20 text-brand-clay",
-    moss: "bg-brand-moss/10 ring-brand-moss/20 text-brand-moss",
-  } as const;
+function Chip({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`rounded-2xl p-5 ring-1 ${map[tone]}`}>
-      <div className="flex items-center gap-2">
-        <Icon className="size-4" />
-        <p className="text-[10px] font-bold uppercase tracking-widest">{label}</p>
+    <span className="inline-flex items-center gap-1 rounded-full bg-white/10 ring-1 ring-white/20 px-3 py-1 font-medium">
+      {children}
+    </span>
+  );
+}
+
+function MiniStat({ icon: Icon, label, value }: { icon: typeof Package; label: string; value: string }) {
+  return (
+    <div className="rounded-2xl bg-card ring-1 ring-border p-3 sm:p-4">
+      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+        <Icon className="size-3 text-brand-clay" /> {label}
       </div>
-      <p className="mt-2 text-3xl font-bold text-foreground text-rupee">{value}</p>
+      <p className="mt-1 text-xl sm:text-2xl font-bold text-rupee">{value}</p>
     </div>
   );
 }
