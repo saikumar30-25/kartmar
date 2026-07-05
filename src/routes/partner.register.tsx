@@ -165,7 +165,7 @@ function Reg() {
               onPick={() => vehicleRef.current?.click()}
             />
           </div>
-          <p className="text-[11px] text-muted-foreground">Only you and platform admins can view these documents.</p>
+          <p className="text-[11px] text-muted-foreground">AI verifies your details instantly — no admin queue. If anything looks off, you'll be asked to correct it.</p>
         </Section>
 
         <div className="flex gap-2">
