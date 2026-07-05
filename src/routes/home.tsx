@@ -310,3 +310,17 @@ function MiniStat({ icon: Icon, label, value }: { icon: typeof Package; label: s
     </div>
   );
 }
+
+export function DealStatus({ status }: { status: string }) {
+  const map: Record<string, { label: string; cls: string }> = {
+    pending_payment: { label: "Pending payment", cls: "bg-stone-100 text-stone-700" },
+    paid: { label: "Paid · escrow", cls: "bg-amber-100 text-amber-800" },
+    in_transit: { label: "In transit", cls: "bg-blue-100 text-blue-800" },
+    delivered: { label: "Delivered", cls: "bg-emerald-100 text-emerald-800" },
+    completed: { label: "Completed", cls: "bg-emerald-100 text-emerald-800" },
+    disputed: { label: "Disputed", cls: "bg-red-100 text-red-800" },
+    cancelled: { label: "Cancelled", cls: "bg-stone-100 text-stone-500" },
+  };
+  const s = map[status] ?? map.pending_payment;
+  return <span className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${s.cls}`}>{s.label}</span>;
+}
