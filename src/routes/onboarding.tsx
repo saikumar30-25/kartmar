@@ -322,7 +322,7 @@ function OnboardingForm({ role, onDone }: { role: Role; onDone: () => Promise<vo
               <DocTile label="Driving licence" url={licenseUrl} uploading={uploading === "license"} onPick={() => licenseRef.current?.click()} />
               <DocTile label="Vehicle photo" url={vehicleUrl} uploading={uploading === "vehicle"} onPick={() => vehicleRef.current?.click()} />
             </div>
-            <p className="text-[11px] text-muted-foreground">Only you and platform admins can view these documents. Your account stays in <b>pending</b> until an admin approves it.</p>
+            <p className="text-[11px] text-muted-foreground">Only you and platform admins can view these documents. <strong>AI verifies your details instantly</strong> — no admin queue. If anything looks off, you'll be asked to correct it.</p>
           </Section>
         </>
       )}
