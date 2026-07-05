@@ -41,9 +41,7 @@ function Home() {
   const [sort, setSort] = useState<"new" | "price_asc" | "price_desc">("new");
   const [near, setNear] = useState(true);
 
-  if (!user) return null;
-
-  const greeting = `${new Date().getHours() < 12 ? "Good morning" : "Good evening"}, ${user.name.split(" ")[0]}`;
+  const userDistrict = user?.district ?? null;
 
   // Top markets = districts with most active listings
   const markets = useMemo(() => {
@@ -58,7 +56,6 @@ function Home() {
     return Array.from(m.values()).sort((a, b) => b.count - a.count).slice(0, 8);
   }, [listings]);
 
-  // Top farmers = farmer_ids with most listings
   const topFarmers = useMemo(() => {
     const m = new Map<string, { id: string; count: number; district: string | null; sample?: any }>();
     for (const l of listings) {
@@ -72,7 +69,7 @@ function Home() {
 
   const filtered = useMemo(() => {
     let out = listings.slice();
-    if (near && user.district) out = out.filter((l) => l.district === user.district).concat(out.filter((l) => l.district !== user.district));
+    if (near && userDistrict) out = out.filter((l) => l.district === userDistrict).concat(out.filter((l) => l.district !== userDistrict));
     if (cat !== "all") out = out.filter((l) => (l.category ?? "").toLowerCase() === cat);
     if (query.trim()) {
       const q = query.toLowerCase();
@@ -86,7 +83,13 @@ function Home() {
     if (sort === "price_desc") out.sort((a, b) => Number(b.price_paise) - Number(a.price_paise));
     if (sort === "new") out.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     return out;
-  }, [listings, cat, query, sort, near, user.district]);
+  }, [listings, cat, query, sort, near, userDistrict]);
+
+  if (!user) return null;
+
+  const greeting = `${new Date().getHours() < 12 ? "Good morning" : "Good evening"}, ${user.name.split(" ")[0]}`;
+
+
 
   const activeDeals = deals.filter((d) => d.status !== "completed" && d.status !== "cancelled").length;
 
