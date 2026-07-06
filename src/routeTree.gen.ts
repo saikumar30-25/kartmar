@@ -16,6 +16,7 @@ import { Route as PostListingRouteImport } from './routes/post-listing'
 import { Route as PartnerRouteImport } from './routes/partner'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as MyListingsRouteImport } from './routes/my-listings'
 import { Route as InterestsRouteImport } from './routes/interests'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as DealsRouteImport } from './routes/deals'
@@ -62,6 +63,11 @@ const OnboardingRoute = OnboardingRouteImport.update({
 const NotificationsRoute = NotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MyListingsRoute = MyListingsRouteImport.update({
+  id: '/my-listings',
+  path: '/my-listings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InterestsRoute = InterestsRouteImport.update({
@@ -134,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/deals': typeof DealsRouteWithChildren
   '/home': typeof HomeRoute
   '/interests': typeof InterestsRoute
+  '/my-listings': typeof MyListingsRoute
   '/notifications': typeof NotificationsRoute
   '/onboarding': typeof OnboardingRoute
   '/partner': typeof PartnerRouteWithChildren
@@ -155,6 +162,7 @@ export interface FileRoutesByTo {
   '/deals': typeof DealsRouteWithChildren
   '/home': typeof HomeRoute
   '/interests': typeof InterestsRoute
+  '/my-listings': typeof MyListingsRoute
   '/notifications': typeof NotificationsRoute
   '/onboarding': typeof OnboardingRoute
   '/partner': typeof PartnerRouteWithChildren
@@ -177,6 +185,7 @@ export interface FileRoutesById {
   '/deals': typeof DealsRouteWithChildren
   '/home': typeof HomeRoute
   '/interests': typeof InterestsRoute
+  '/my-listings': typeof MyListingsRoute
   '/notifications': typeof NotificationsRoute
   '/onboarding': typeof OnboardingRoute
   '/partner': typeof PartnerRouteWithChildren
@@ -200,6 +209,7 @@ export interface FileRouteTypes {
     | '/deals'
     | '/home'
     | '/interests'
+    | '/my-listings'
     | '/notifications'
     | '/onboarding'
     | '/partner'
@@ -221,6 +231,7 @@ export interface FileRouteTypes {
     | '/deals'
     | '/home'
     | '/interests'
+    | '/my-listings'
     | '/notifications'
     | '/onboarding'
     | '/partner'
@@ -242,6 +253,7 @@ export interface FileRouteTypes {
     | '/deals'
     | '/home'
     | '/interests'
+    | '/my-listings'
     | '/notifications'
     | '/onboarding'
     | '/partner'
@@ -264,6 +276,7 @@ export interface RootRouteChildren {
   DealsRoute: typeof DealsRouteWithChildren
   HomeRoute: typeof HomeRoute
   InterestsRoute: typeof InterestsRoute
+  MyListingsRoute: typeof MyListingsRoute
   NotificationsRoute: typeof NotificationsRoute
   OnboardingRoute: typeof OnboardingRoute
   PartnerRoute: typeof PartnerRouteWithChildren
@@ -324,6 +337,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/my-listings': {
+      id: '/my-listings'
+      path: '/my-listings'
+      fullPath: '/my-listings'
+      preLoaderRoute: typeof MyListingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/interests': {
@@ -443,6 +463,7 @@ const rootRouteChildren: RootRouteChildren = {
   DealsRoute: DealsRouteWithChildren,
   HomeRoute: HomeRoute,
   InterestsRoute: InterestsRoute,
+  MyListingsRoute: MyListingsRoute,
   NotificationsRoute: NotificationsRoute,
   OnboardingRoute: OnboardingRoute,
   PartnerRoute: PartnerRouteWithChildren,
