@@ -294,6 +294,100 @@ export function useCreateListing() {
   });
 }
 
+// Farmer's own listings (for the manage-products view). Realtime.
+export function useMyListings() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const q = useQuery({
+    queryKey: ["my_listings", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("listings")
+        .select("*")
+        .eq("farmer_id", user.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!user,
+  });
+
+  useEffect(() => {
+    if (!user) return;
+    const ch = supabase
+      .channel(`my_listings:${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "listings", filter: `farmer_id=eq.${user.id}` },
+        () => qc.invalidateQueries({ queryKey: ["my_listings", user.id] }),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [user, qc]);
+
+  return q;
+}
+
+export function useUpdateListing() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Partial<ListingRow> }) => {
+      const { data, error } = await supabase.from("listings").update(patch).eq("id", id).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["listings"] });
+      qc.invalidateQueries({ queryKey: ["my_listings"] });
+    },
+  });
+}
+
+export function useDeleteListing() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("listings").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["listings"] });
+      qc.invalidateQueries({ queryKey: ["my_listings"] });
+    },
+  });
+}
+
+// Public marketplace (no auth) — for the landing page.
+export function usePublicListings() {
+  return useQuery({
+    queryKey: ["public_listings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("listings")
+        .select("id,product_name,category,quantity,unit,price_paise,photo_url,district,state,farmer_id,created_at,quality_grade")
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(60);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+// Distance-based ordering: same district (0), same state (1), other (2).
+export function distanceRank(
+  target: { district?: string | null; state?: string | null } | null,
+  item: { district?: string | null; state?: string | null },
+): number {
+  if (!target?.district && !target?.state) return 2;
+  if (target.district && item.district && target.district.toLowerCase() === target.district.toLowerCase() && item.district.toLowerCase() === target.district.toLowerCase()) return 0;
+  if (target.state && item.state && item.state.toLowerCase() === target.state.toLowerCase()) return 1;
+  return 2;
+}
+
 // ---------- Requirements ----------
 export function useRequirements() {
   return useQuery({
