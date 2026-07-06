@@ -41,14 +41,46 @@ export function NotificationBridge() {
           .from("interest_request_contacts")
           .select("buyer_phone").eq("interest_id", r.id).maybeSingle();
         const productName = r.listing_product_name ?? "your order";
-        const msg = status === "accepted"
-          ? `Hi ${r.buyer_name}, good news from Kartmar 🌾 — your order for ${productName} has been ACCEPTED. Please open Kartmar to confirm and complete payment.`
+        // Fetch listing + farmer profile for a full deal receipt.
+        const { data: listing } = await supabase
+          .from("listings").select("product_name,unit,price_paise,district,state,farmer_id").eq("id", r.listing_id).maybeSingle();
+        const { data: farmerProfile } = await supabase
+          .from("profiles").select("name,phone,address,pincode,district,state").eq("id", uid).maybeSingle();
+
+        const qtyText = r.quantity ? `${r.quantity} ${listing?.unit ?? ""}` : "";
+        const priceText = r.offer_price_paise
+          ? `₹${Math.round(r.offer_price_paise / 100)}/${listing?.unit ?? "unit"}`
+          : listing?.price_paise ? `₹${Math.round(listing.price_paise / 100)}/${listing.unit ?? "unit"}` : "";
+        const totalText = r.quantity && (r.offer_price_paise || listing?.price_paise)
+          ? `Total ≈ ₹${Math.round((r.quantity * (r.offer_price_paise ?? listing!.price_paise)) / 100)}`
+          : "";
+
+        const receipt = status === "accepted"
+          ? [
+              `🌾 *Kartmar — Order accepted*`,
+              ``,
+              `Hi ${r.buyer_name}, your order has been accepted!`,
+              ``,
+              `• Product: ${productName}`,
+              qtyText && `• Quantity: ${qtyText}`,
+              priceText && `• Price: ${priceText}`,
+              totalText && `• ${totalText}`,
+              ``,
+              `*Seller contact*`,
+              `• Name: ${farmerProfile?.name ?? "Farmer"}`,
+              farmerProfile?.phone && `• Phone: ${farmerProfile.phone}`,
+              (farmerProfile?.address || farmerProfile?.pincode) && `• Address: ${farmerProfile?.address ?? ""}${farmerProfile?.pincode ? " — " + farmerProfile.pincode : ""}`,
+              `• Location: ${farmerProfile?.district ?? listing?.district ?? ""}, ${farmerProfile?.state ?? listing?.state ?? ""}`,
+              ``,
+              `Open Kartmar to complete secure payment.`,
+            ].filter(Boolean).join("\n")
           : `Hi ${r.buyer_name}, unfortunately your order for ${productName} on Kartmar has been declined. You can browse other listings anytime.`;
-        openWhatsAppWithLog(uid, waLink(contact?.buyer_phone, msg), {
+
+        openWhatsAppWithLog(uid, waLink(contact?.buyer_phone, receipt), {
           to: r.buyer_name,
           phone: contact?.buyer_phone ?? null,
-          context: status === "accepted" ? "Interest accepted → buyer" : "Interest declined → buyer",
-          message: msg,
+          context: status === "accepted" ? "Interest accepted → buyer (with receipt)" : "Interest declined → buyer",
+          message: receipt,
         });
       } catch (e: any) {
         toast.error(e?.message ?? "Failed");
