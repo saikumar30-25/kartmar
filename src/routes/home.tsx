@@ -41,35 +41,48 @@ function Home() {
   const [sort, setSort] = useState<"new" | "price_asc" | "price_desc">("new");
   const [near, setNear] = useState(true);
 
-  const userDistrict = user?.district ?? null;
+  const target = user ? { district: user.district, state: user.state } : null;
 
-  // Top markets = districts with most active listings
+  // Top markets = districts with most active listings, ranked by distance first.
   const markets = useMemo(() => {
     const m = new Map<string, { district: string; state: string | null; count: number; sample?: any }>();
     for (const l of listings) {
-      const key = `${l.district}`;
-      const cur = m.get(key) ?? { district: l.district!, state: l.state, count: 0, sample: l };
+      if (!l.district) continue;
+      const cur = m.get(l.district) ?? { district: l.district, state: l.state, count: 0, sample: l };
       cur.count += 1;
       if (!cur.sample?.photo_url && l.photo_url) cur.sample = l;
-      m.set(key, cur);
+      m.set(l.district, cur);
     }
-    return Array.from(m.values()).sort((a, b) => b.count - a.count).slice(0, 8);
-  }, [listings]);
+    return Array.from(m.values())
+      .sort((a, b) => {
+        const ra = distanceRank(target, a);
+        const rb = distanceRank(target, b);
+        if (ra !== rb) return ra - rb;
+        return b.count - a.count;
+      })
+      .slice(0, 8);
+  }, [listings, target]);
 
   const topFarmers = useMemo(() => {
-    const m = new Map<string, { id: string; count: number; district: string | null; sample?: any }>();
+    const m = new Map<string, { id: string; count: number; district: string | null; state: string | null; sample?: any }>();
     for (const l of listings) {
-      const cur = m.get(l.farmer_id) ?? { id: l.farmer_id, count: 0, district: l.district, sample: l };
+      const cur = m.get(l.farmer_id) ?? { id: l.farmer_id, count: 0, district: l.district, state: l.state, sample: l };
       cur.count += 1;
       if (!cur.sample?.photo_url && l.photo_url) cur.sample = l;
       m.set(l.farmer_id, cur);
     }
-    return Array.from(m.values()).sort((a, b) => b.count - a.count).slice(0, 6);
-  }, [listings]);
+    return Array.from(m.values())
+      .sort((a, b) => {
+        const ra = distanceRank(target, a);
+        const rb = distanceRank(target, b);
+        if (ra !== rb) return ra - rb;
+        return b.count - a.count;
+      })
+      .slice(0, 6);
+  }, [listings, target]);
 
   const filtered = useMemo(() => {
     let out = listings.slice();
-    if (near && userDistrict) out = out.filter((l) => l.district === userDistrict).concat(out.filter((l) => l.district !== userDistrict));
     if (cat !== "all") out = out.filter((l) => (l.category ?? "").toLowerCase() === cat);
     if (query.trim()) {
       const q = query.toLowerCase();
@@ -80,10 +93,22 @@ function Home() {
       );
     }
     if (sort === "price_asc") out.sort((a, b) => Number(a.price_paise) - Number(b.price_paise));
-    if (sort === "price_desc") out.sort((a, b) => Number(b.price_paise) - Number(a.price_paise));
-    if (sort === "new") out.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    else if (sort === "price_desc") out.sort((a, b) => Number(b.price_paise) - Number(a.price_paise));
+    else {
+      // "new" + near-first: primary sort by distance rank, secondary by recency.
+      out.sort((a, b) => {
+        if (near) {
+          const ra = distanceRank(target, a);
+          const rb = distanceRank(target, b);
+          if (ra !== rb) return ra - rb;
+        }
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+    }
     return out;
-  }, [listings, cat, query, sort, near, userDistrict]);
+  }, [listings, cat, query, sort, near, target]);
+
+  const userDistrict = user?.district ?? null;
 
   if (!user) return null;
 
