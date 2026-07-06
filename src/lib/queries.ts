@@ -383,7 +383,7 @@ export function distanceRank(
   item: { district?: string | null; state?: string | null },
 ): number {
   if (!target?.district && !target?.state) return 2;
-  if (target.district && item.district && target.district.toLowerCase() === target.district.toLowerCase() && item.district.toLowerCase() === target.district.toLowerCase()) return 0;
+  if (target.district && item.district && item.district.toLowerCase() === target.district.toLowerCase()) return 0;
   if (target.state && item.state && item.state.toLowerCase() === target.state.toLowerCase()) return 1;
   return 2;
 }
