@@ -20,6 +20,7 @@ import { Route as MyListingsRouteImport } from './routes/my-listings'
 import { Route as InterestsRouteImport } from './routes/interests'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as DealsRouteImport } from './routes/deals'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as BrowseRouteImport } from './routes/browse'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdvisorRouteImport } from './routes/advisor'
@@ -85,6 +86,11 @@ const DealsRoute = DealsRouteImport.update({
   path: '/deals',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BrowseRoute = BrowseRouteImport.update({
   id: '/browse',
   path: '/browse',
@@ -137,6 +143,7 @@ export interface FileRoutesByFullPath {
   '/advisor': typeof AdvisorRoute
   '/auth': typeof AuthRoute
   '/browse': typeof BrowseRoute
+  '/dashboard': typeof DashboardRoute
   '/deals': typeof DealsRouteWithChildren
   '/home': typeof HomeRoute
   '/interests': typeof InterestsRoute
@@ -159,6 +166,7 @@ export interface FileRoutesByTo {
   '/advisor': typeof AdvisorRoute
   '/auth': typeof AuthRoute
   '/browse': typeof BrowseRoute
+  '/dashboard': typeof DashboardRoute
   '/deals': typeof DealsRouteWithChildren
   '/home': typeof HomeRoute
   '/interests': typeof InterestsRoute
@@ -182,6 +190,7 @@ export interface FileRoutesById {
   '/advisor': typeof AdvisorRoute
   '/auth': typeof AuthRoute
   '/browse': typeof BrowseRoute
+  '/dashboard': typeof DashboardRoute
   '/deals': typeof DealsRouteWithChildren
   '/home': typeof HomeRoute
   '/interests': typeof InterestsRoute
@@ -206,6 +215,7 @@ export interface FileRouteTypes {
     | '/advisor'
     | '/auth'
     | '/browse'
+    | '/dashboard'
     | '/deals'
     | '/home'
     | '/interests'
@@ -228,6 +238,7 @@ export interface FileRouteTypes {
     | '/advisor'
     | '/auth'
     | '/browse'
+    | '/dashboard'
     | '/deals'
     | '/home'
     | '/interests'
@@ -250,6 +261,7 @@ export interface FileRouteTypes {
     | '/advisor'
     | '/auth'
     | '/browse'
+    | '/dashboard'
     | '/deals'
     | '/home'
     | '/interests'
@@ -273,6 +285,7 @@ export interface RootRouteChildren {
   AdvisorRoute: typeof AdvisorRoute
   AuthRoute: typeof AuthRoute
   BrowseRoute: typeof BrowseRoute
+  DashboardRoute: typeof DashboardRoute
   DealsRoute: typeof DealsRouteWithChildren
   HomeRoute: typeof HomeRoute
   InterestsRoute: typeof InterestsRoute
@@ -365,6 +378,13 @@ declare module '@tanstack/react-router' {
       path: '/deals'
       fullPath: '/deals'
       preLoaderRoute: typeof DealsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/browse': {
@@ -460,6 +480,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdvisorRoute: AdvisorRoute,
   AuthRoute: AuthRoute,
   BrowseRoute: BrowseRoute,
+  DashboardRoute: DashboardRoute,
   DealsRoute: DealsRouteWithChildren,
   HomeRoute: HomeRoute,
   InterestsRoute: InterestsRoute,

@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
-import { useListings, useMyDeals, useRequireAuth, useForbidPartner } from "@/lib/queries";
+import { useListings, useMyDeals, useRequireAuth, useForbidPartner, distanceRank } from "@/lib/queries";
 import { rupees } from "@/lib/format";
 import { Input } from "@/components/ui/input";
 import {
