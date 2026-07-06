@@ -108,7 +108,7 @@ function Home() {
     return out;
   }, [listings, cat, query, sort, near, target]);
 
-  const userDistrict = user?.district ?? null;
+  
 
   if (!user) return null;
 
