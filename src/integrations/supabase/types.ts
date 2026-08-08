@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      deal_locations: {
+        Row: {
+          accuracy_m: number | null
+          deal_id: string
+          lat: number
+          lng: number
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accuracy_m?: number | null
+          deal_id: string
+          lat: number
+          lng: number
+          role: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accuracy_m?: number | null
+          deal_id?: string
+          lat?: number
+          lng?: number
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_locations_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_messages: {
         Row: {
           created_at: string
@@ -55,6 +93,8 @@ export type Database = {
       deals: {
         Row: {
           agreed_price_paise: number
+          booking_fee_paid_at: string | null
+          booking_fee_paise: number
           buyer_id: string
           created_at: string
           drop_district: string | null
@@ -73,6 +113,8 @@ export type Database = {
         }
         Insert: {
           agreed_price_paise: number
+          booking_fee_paid_at?: string | null
+          booking_fee_paise?: number
           buyer_id: string
           created_at?: string
           drop_district?: string | null
@@ -91,6 +133,8 @@ export type Database = {
         }
         Update: {
           agreed_price_paise?: number
+          booking_fee_paid_at?: string | null
+          booking_fee_paise?: number
           buyer_id?: string
           created_at?: string
           drop_district?: string | null
@@ -470,14 +514,20 @@ export type Database = {
           created_at: string
           deal_id: string
           delivered_at: string | null
+          delivery_otp: string
           distance_km: number | null
           drop_district: string
+          drop_lat: number | null
+          drop_lng: number | null
           fare_paise: number
           id: string
           notes: string | null
+          otp_verified_at: string | null
           partner_id: string | null
           pickup_at: string | null
           pickup_district: string
+          pickup_lat: number | null
+          pickup_lng: number | null
           status: Database["public"]["Enums"]["trip_status"]
           updated_at: string
         }
@@ -485,14 +535,20 @@ export type Database = {
           created_at?: string
           deal_id: string
           delivered_at?: string | null
+          delivery_otp?: string
           distance_km?: number | null
           drop_district: string
+          drop_lat?: number | null
+          drop_lng?: number | null
           fare_paise: number
           id?: string
           notes?: string | null
+          otp_verified_at?: string | null
           partner_id?: string | null
           pickup_at?: string | null
           pickup_district: string
+          pickup_lat?: number | null
+          pickup_lng?: number | null
           status?: Database["public"]["Enums"]["trip_status"]
           updated_at?: string
         }
@@ -500,14 +556,20 @@ export type Database = {
           created_at?: string
           deal_id?: string
           delivered_at?: string | null
+          delivery_otp?: string
           distance_km?: number | null
           drop_district?: string
+          drop_lat?: number | null
+          drop_lng?: number | null
           fare_paise?: number
           id?: string
           notes?: string | null
+          otp_verified_at?: string | null
           partner_id?: string | null
           pickup_at?: string | null
           pickup_district?: string
+          pickup_lat?: number | null
+          pickup_lng?: number | null
           status?: Database["public"]["Enums"]["trip_status"]
           updated_at?: string
         }
