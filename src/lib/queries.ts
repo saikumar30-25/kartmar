@@ -740,3 +740,69 @@ export function useUpdateTripStatus() {
     },
   });
 }
+
+// ---------- Booking fee (fixed ₹100 trust deposit) ----------
+export const BOOKING_FEE_PAISE = 10000;
+
+export function usePayBookingFee() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (dealId: string) => {
+      const { data, error } = await supabase
+        .from("deals")
+        .update({ booking_fee_paid_at: new Date().toISOString(), status: "paid" })
+        .eq("id", dealId)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_d, id) => {
+      qc.invalidateQueries({ queryKey: ["deal", id] });
+      qc.invalidateQueries({ queryKey: ["deals"] });
+    },
+  });
+}
+
+// ---------- Delivery completion with OTP ----------
+export function useCompleteDeliveryWithOtp() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ tripId, otp }: { tripId: string; otp: string }) => {
+      const { data: trip, error } = await supabase
+        .from("trips")
+        .select("id,deal_id,delivery_otp")
+        .eq("id", tripId)
+        .maybeSingle();
+      if (error) throw error;
+      if (!trip) throw new Error("Trip not found");
+      if (String(trip.delivery_otp).trim() !== otp.trim()) throw new Error("Wrong delivery code");
+
+      const now = new Date().toISOString();
+      const { error: tErr } = await supabase
+        .from("trips")
+        .update({ status: "delivered", delivered_at: now, otp_verified_at: now })
+        .eq("id", tripId);
+      if (tErr) throw tErr;
+
+      // Deal moves to delivered; the sold listing leaves the farmer's active stock.
+      const { data: deal } = await supabase
+        .from("deals")
+        .update({ status: "delivered" })
+        .eq("id", trip.deal_id)
+        .select("id,listing_id")
+        .maybeSingle();
+      if (deal?.listing_id) {
+        await supabase.from("listings").update({ status: "sold" }).eq("id", deal.listing_id);
+      }
+      return trip;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["partner_trips"] });
+      qc.invalidateQueries({ queryKey: ["trip_for_deal"] });
+      qc.invalidateQueries({ queryKey: ["deals"] });
+      qc.invalidateQueries({ queryKey: ["my_listings"] });
+      qc.invalidateQueries({ queryKey: ["listings"] });
+    },
+  });
+}

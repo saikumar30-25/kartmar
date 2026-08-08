@@ -4,16 +4,20 @@ import { rupees } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useEffect, useMemo, useState } from "react";
-import { Truck, MapPin, Check, IndianRupee, Star, Loader2 } from "lucide-react";
+import { Truck, MapPin, Check, IndianRupee, Star, Loader2, KeyRound } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
   useMyPartnerProfile, useTogglePartnerOnline, usePartnerTrips,
-  useAcceptTrip, useUpdateTripStatus, useRequireAuth,
+  useAcceptTrip, useUpdateTripStatus, useRequireAuth, useCompleteDeliveryWithOtp,
 } from "@/lib/queries";
+import { LiveMap, type MapPin as Pin } from "@/components/LiveMap";
+import { useShareMyLocation, useDealLocations } from "@/lib/live-location";
 import { useI18n } from "@/lib/i18n";
+
 
 export const Route = createFileRoute("/partner")({
   head: () => ({ meta: [{ title: "Partner dashboard — AgriConnect" }] }),
@@ -34,12 +38,53 @@ function Partner() {
   const { t } = useI18n();
   const [seenOfferIds, setSeenOfferIds] = useState<Set<string>>(new Set());
   const [activeOffer, setActiveOffer] = useState<string | null>(null);
+  const completeWithOtp = useCompleteDeliveryWithOtp();
+  const [otpTripId, setOtpTripId] = useState<string | null>(null);
+  const [otp, setOtp] = useState("");
 
   const offered = useMemo(() => trips.filter((t) => t.status === "offered" && !t.partner_id), [trips]);
   const mine = useMemo(() => trips.filter((t) => t.partner_id === user?.id), [trips, user]);
+  const activeTrip = useMemo(
+    () => mine.find((t) => ["accepted", "picked_up", "in_transit"].includes(t.status)),
+    [mine],
+  );
+
+  // Broadcast the driver's live GPS to the deal participants while a trip is running.
+  useShareMyLocation(activeTrip?.deal_id, user?.id, "partner", !!activeTrip);
+  const { data: liveLocations = [] } = useDealLocations(activeTrip?.deal_id);
+
+  const pins = useMemo<Pin[]>(() => {
+    const out: Pin[] = liveLocations
+      .filter((l) => Number.isFinite(l.lat) && Number.isFinite(l.lng))
+      .map((l) => ({
+        id: `live-${l.user_id}`,
+        label: l.role === "farmer" ? "Farmer" : l.role === "buyer" ? "Buyer" : "You",
+        lat: l.lat,
+        lng: l.lng,
+        kind: (l.role === "farmer" ? "farmer" : l.role === "buyer" ? "buyer" : "partner") as Pin["kind"],
+      }));
+    if (activeTrip?.pickup_lat && activeTrip?.pickup_lng)
+      out.push({ id: "pickup", label: "Pickup", lat: Number(activeTrip.pickup_lat), lng: Number(activeTrip.pickup_lng), kind: "pickup" });
+    if (activeTrip?.drop_lat && activeTrip?.drop_lng)
+      out.push({ id: "drop", label: "Drop", lat: Number(activeTrip.drop_lat), lng: Number(activeTrip.drop_lng), kind: "drop" });
+    return out;
+  }, [liveLocations, activeTrip]);
+
+  const submitOtp = async () => {
+    if (!otpTripId) return;
+    try {
+      await completeWithOtp.mutateAsync({ tripId: otpTripId, otp });
+      toast.success("Delivery confirmed. Trip closed.");
+      setOtpTripId(null);
+      setOtp("");
+    } catch (e: any) {
+      toast.error(e.message || "Could not verify the code");
+    }
+  };
 
   // Realtime new-offer notification toast
   useEffect(() => {
+
     if (!profile?.is_online) return;
     offered.forEach((t) => {
       if (!seenOfferIds.has(t.id)) {
@@ -162,6 +207,18 @@ function Partner() {
 
       <section>
         <h2 className="font-serif italic text-2xl text-brand-green mb-4">My trips</h2>
+        {activeTrip && (
+          <div className="mb-4 rounded-2xl bg-card ring-1 ring-border p-4">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <p className="text-sm font-extrabold flex items-center gap-2">
+                <MapPin className="size-4 text-brand-clay" /> Live route · {activeTrip.pickup_district} → {activeTrip.drop_district}
+              </p>
+              <p className="text-[11px] text-muted-foreground">Farmer, buyer and you are tracked live</p>
+            </div>
+            <div className="mt-3"><LiveMap pins={pins} height={280} /></div>
+          </div>
+        )}
+
         {mine.length === 0 ? (
           <p className="text-sm text-muted-foreground">No trips yet.</p>
         ) : (
@@ -174,7 +231,14 @@ function Partner() {
                   <p className="text-xs text-muted-foreground capitalize">{t.status.replaceAll("_", " ")}</p>
                 </div>
                 <p className="font-bold text-sm text-rupee">{rupees(Number(t.fare_paise))}</p>
-                <NextActionButton tripId={t.id} status={t.status} onUpdate={(s) => updateStatus.mutate({ id: t.id, status: s })} pending={updateStatus.isPending} />
+                <NextActionButton
+                  tripId={t.id}
+                  status={t.status}
+                  onUpdate={(s) => updateStatus.mutate({ id: t.id, status: s })}
+                  onVerify={() => { setOtpTripId(t.id); setOtp(""); }}
+                  pending={updateStatus.isPending}
+                />
+
               </div>
             ))}
           </div>
@@ -220,14 +284,38 @@ function Partner() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!otpTripId} onOpenChange={(o) => { if (!o) { setOtpTripId(null); setOtp(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm delivery</DialogTitle>
+            <DialogDescription>
+              Ask the customer for the 6-digit delivery code shown in their Kartmar deal page.
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            value={otp}
+            onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+            placeholder="6-digit code"
+            inputMode="numeric"
+            className="text-center text-2xl tracking-[0.4em] font-extrabold h-14"
+          />
+          <DialogFooter>
+            <Button onClick={submitOtp} disabled={otp.length !== 6 || completeWithOtp.isPending} className="w-full bg-brand-green text-brand-cream">
+              {completeWithOtp.isPending ? "Verifying…" : "Verify & complete delivery"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
 
-function NextActionButton({ status, onUpdate, pending }: { tripId: string; status: string; onUpdate: (s: any) => void; pending: boolean }) {
+function NextActionButton({ status, onUpdate, onVerify, pending }: { tripId: string; status: string; onUpdate: (s: any) => void; onVerify: () => void; pending: boolean }) {
   if (status === "accepted") return <Button size="sm" disabled={pending} onClick={() => onUpdate("picked_up")} className="bg-brand-clay text-white">Mark picked up</Button>;
   if (status === "picked_up") return <Button size="sm" disabled={pending} onClick={() => onUpdate("in_transit")} className="bg-brand-clay text-white">Start trip</Button>;
-  if (status === "in_transit") return <Button size="sm" disabled={pending} onClick={() => onUpdate("delivered")} className="bg-brand-green text-brand-cream">Mark delivered</Button>;
+  if (status === "in_transit") return <Button size="sm" disabled={pending} onClick={onVerify} className="bg-brand-green text-brand-cream"><KeyRound className="size-3.5 mr-1.5" /> Enter delivery code</Button>;
   return null;
 }
 

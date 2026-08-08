@@ -1,16 +1,23 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { lovable } from "@/integrations/lovable";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Mail, ArrowLeft } from "lucide-react";
+import oxenImg from "@/assets/farmer-oxen.jpg";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign in — AgriConnect" },
-      { name: "description", content: "Sign in to AgriConnect with Google." },
+      { title: "Sign in — Kartmar farmer marketplace" },
+      { name: "description", content: "Sign in to Kartmar with Google or an email verification code to buy and sell farm produce directly." },
+      { property: "og:title", content: "Sign in — Kartmar" },
+      { property: "og:description", content: "Farmers, market owners and delivery partners trade directly on Kartmar." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Auth,
@@ -20,6 +27,9 @@ function Auth() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
+  const [mode, setMode] = useState<"choose" | "email" | "code">("choose");
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
 
   useEffect(() => {
     if (loading) return;
@@ -37,49 +47,152 @@ function Auth() {
       setBusy(false);
       toast.error(result.error.message || "Could not sign in with Google");
     }
-    // if redirected, browser navigates; otherwise the useEffect picks up the new session
+  };
+
+  const sendCode = async () => {
+    const clean = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(clean)) {
+      toast.error("Enter a valid email address");
+      return;
+    }
+    setBusy(true);
+    const { error } = await supabase.auth.signInWithOtp({
+      email: clean,
+      options: { shouldCreateUser: true, emailRedirectTo: `${window.location.origin}/auth` },
+    });
+    setBusy(false);
+    if (error) {
+      toast.error(error.message || "Could not send the verification code");
+      return;
+    }
+    setMode("code");
+    toast.success("Verification code sent. Check your inbox.");
+  };
+
+  const verifyCode = async () => {
+    setBusy(true);
+    const { error } = await supabase.auth.verifyOtp({
+      email: email.trim().toLowerCase(),
+      token: code.trim(),
+      type: "email",
+    });
+    setBusy(false);
+    if (error) {
+      toast.error(error.message || "Wrong or expired code");
+      return;
+    }
+    toast.success("Email verified");
   };
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-brand-cream">
-      <div className="hidden lg:block bg-brand-green text-brand-cream p-12 relative overflow-hidden">
-        <Link to="/" className="font-serif italic text-2xl">AgriConnect</Link>
-        <div className="absolute bottom-12 left-12 right-12">
-          <p className="font-serif italic text-3xl leading-tight">
-            "Sold 200kg of tomatoes at a fair price without leaving my farm."
-          </p>
-          <p className="mt-4 text-sm opacity-80">— Venkata Reddy, Guntur</p>
+      <div className="hidden lg:block relative overflow-hidden">
+        <img
+          src={oxenImg}
+          alt="Indian farmer ploughing a field with a pair of oxen at sunrise"
+          className="absolute inset-0 size-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-brand-green via-brand-green/60 to-brand-green/10" />
+        <div className="relative h-full p-12 flex flex-col justify-between text-brand-cream">
+          <Link to="/" className="font-serif italic text-2xl drop-shadow">Kartmar</Link>
+          <div>
+            <p className="font-serif italic text-3xl leading-tight drop-shadow">
+              "Sold 200kg of tomatoes at a fair price without leaving my farm."
+            </p>
+            <p className="mt-4 text-sm opacity-90">— Venkata Reddy, Guntur</p>
+          </div>
         </div>
-        <div className="absolute -right-20 -bottom-20 size-80 rounded-full bg-brand-moss/40 blur-3xl" />
       </div>
 
       <div className="flex items-center justify-center p-6 sm:p-12">
         <div className="w-full max-w-sm">
-          <Link to="/" className="lg:hidden font-serif italic text-2xl text-brand-green">AgriConnect</Link>
+          <Link to="/" className="lg:hidden font-serif italic text-2xl text-brand-green">Kartmar</Link>
           <h1 className="mt-6 lg:mt-0 font-serif italic text-4xl text-brand-green">Welcome</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Sign in with Google to continue. We'll ask you to pick a role afterwards.
-          </p>
 
-          <Button
-            onClick={handleGoogle}
-            disabled={busy || loading}
-            className="mt-8 w-full h-12 bg-card text-foreground ring-1 ring-border hover:bg-card/90 font-semibold"
-          >
-            {busy ? (
-              <Loader2 className="size-4 mr-2 animate-spin" />
-            ) : (
-              <GoogleIcon className="size-5 mr-2" />
-            )}
-            Continue with Google
-          </Button>
+          {mode === "choose" && (
+            <>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Sign in to continue. We'll ask you to pick a role afterwards.
+              </p>
+              <Button
+                onClick={handleGoogle}
+                disabled={busy || loading}
+                className="mt-8 w-full h-12 bg-card text-foreground ring-1 ring-border hover:bg-card/90 font-semibold"
+              >
+                {busy ? <Loader2 className="size-4 mr-2 animate-spin" /> : <GoogleIcon className="size-5 mr-2" />}
+                Continue with Google
+              </Button>
+
+              <div className="my-5 flex items-center gap-3 text-[11px] uppercase tracking-widest text-muted-foreground">
+                <span className="h-px flex-1 bg-border" /> or <span className="h-px flex-1 bg-border" />
+              </div>
+
+              <Button
+                variant="outline"
+                onClick={() => setMode("email")}
+                className="w-full h-12 font-semibold border-brand-moss/40 text-brand-green"
+              >
+                <Mail className="size-4 mr-2" /> Sign up with email code
+              </Button>
+            </>
+          )}
+
+          {mode === "email" && (
+            <>
+              <p className="mt-2 text-sm text-muted-foreground">
+                We'll email you a one-time verification code — no password to remember.
+              </p>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="mt-6 h-12"
+                autoComplete="email"
+              />
+              <Button onClick={sendCode} disabled={busy} className="mt-3 w-full h-12 bg-brand-green text-brand-cream font-bold">
+                {busy ? "Sending…" : "Send verification code"}
+              </Button>
+              <BackLink onClick={() => setMode("choose")} />
+            </>
+          )}
+
+          {mode === "code" && (
+            <>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Enter the code we sent to <strong>{email}</strong>. Clicking the link in that email works too.
+              </p>
+              <Input
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\s/g, "").slice(0, 10))}
+                placeholder="Verification code"
+                inputMode="numeric"
+                className="mt-6 h-14 text-center text-2xl tracking-[0.3em] font-extrabold"
+              />
+              <Button onClick={verifyCode} disabled={busy || code.length < 6} className="mt-3 w-full h-12 bg-brand-green text-brand-cream font-bold">
+                {busy ? "Verifying…" : "Verify & continue"}
+              </Button>
+              <button onClick={sendCode} disabled={busy} className="mt-3 w-full text-xs text-brand-clay font-semibold">
+                Resend code
+              </button>
+              <BackLink onClick={() => setMode("email")} />
+            </>
+          )}
 
           <p className="mt-6 text-xs text-muted-foreground text-center leading-relaxed">
-            One Google account = one role. After signing in you'll choose farmer, market owner, or delivery partner — that choice is permanent for this email.
+            One account = one role. After signing in you'll choose farmer, market owner, or delivery partner — that choice is permanent for this email.
           </p>
         </div>
       </div>
     </div>
+  );
+}
+
+function BackLink({ onClick }: { onClick: () => void }) {
+  return (
+    <button onClick={onClick} className="mt-5 inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-brand-green">
+      <ArrowLeft className="size-3.5" /> Back
+    </button>
   );
 }
 

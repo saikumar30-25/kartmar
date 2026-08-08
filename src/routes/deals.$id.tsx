@@ -3,19 +3,25 @@ import { AppShell } from "@/components/AppShell";
 import {
   useDeal, useDealRealtime, useDealMessages, useSendDealMessage,
   useUpdateDealStatus, useTripForDeal, useCreateTrip, useRequireAuth,
+  usePayBookingFee, BOOKING_FEE_PAISE,
 } from "@/lib/queries";
 import { rupees } from "@/lib/format";
 import { DealStatus } from "./home";
 import { Button } from "@/components/ui/button";
-import { Check, Truck, IndianRupee, AlertTriangle, Star, Send, Loader2, MessageSquare, Phone } from "lucide-react";
+import { Check, Truck, IndianRupee, AlertTriangle, Star, Send, Loader2, MessageSquare, Phone, MapPin, KeyRound } from "lucide-react";
 import { waLink, telLink } from "@/lib/whatsapp";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { geocodeAddress } from "@/lib/geo.functions";
+import { LiveMap, type MapPin as Pin } from "@/components/LiveMap";
+import { useShareMyLocation, useDealLocations } from "@/lib/live-location";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/deals/$id")({
   head: () => ({ meta: [{ title: "Deal — AgriConnect" }] }),
@@ -44,6 +50,35 @@ function Detail() {
   const [showRate, setShowRate] = useState(false);
   const [draft, setDraft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const payFee = usePayBookingFee();
+  const geocode = useServerFn(geocodeAddress);
+
+  const myRole = user?.id === deal?.farmer_id ? "farmer" : user?.id === deal?.buyer_id ? "buyer" : "partner";
+  const { sharing, error: locError } = useShareMyLocation(
+    deal?.id,
+    user?.id,
+    myRole,
+    !!deal && deal.status !== "completed" && deal.status !== "cancelled",
+  );
+  const { data: liveLocations = [] } = useDealLocations(deal?.id);
+
+  const pins = useMemo<Pin[]>(() => {
+    const out: Pin[] = liveLocations
+      .filter((l) => Number.isFinite(l.lat) && Number.isFinite(l.lng))
+      .map((l) => ({
+        id: `live-${l.user_id}`,
+        label: l.role === "farmer" ? "Farmer" : l.role === "buyer" ? "Buyer" : "Driver",
+        lat: l.lat,
+        lng: l.lng,
+        kind: (l.role === "farmer" ? "farmer" : l.role === "buyer" ? "buyer" : "partner") as Pin["kind"],
+      }));
+    if (trip?.pickup_lat && trip?.pickup_lng)
+      out.push({ id: "pickup", label: "Pickup", lat: Number(trip.pickup_lat), lng: Number(trip.pickup_lng), kind: "pickup" });
+    if (trip?.drop_lat && trip?.drop_lng)
+      out.push({ id: "drop", label: "Drop", lat: Number(trip.drop_lat), lng: Number(trip.drop_lng), kind: "drop" });
+    return out;
+  }, [liveLocations, trip?.pickup_lat, trip?.pickup_lng, trip?.drop_lat, trip?.drop_lng]);
+
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -78,10 +113,18 @@ function Detail() {
 
   const bookTransport = async () => {
     try {
+      const [pickup, drop] = await Promise.all([
+        deal.pickup_district ? geocode({ data: { address: deal.pickup_district } }).catch(() => null) : null,
+        deal.drop_district ? geocode({ data: { address: deal.drop_district } }).catch(() => null) : null,
+      ]);
       await createTrip.mutateAsync({
         deal_id: deal.id,
         pickup_district: deal.pickup_district ?? "",
         drop_district: deal.drop_district ?? "",
+        pickup_lat: pickup?.lat ?? null,
+        pickup_lng: pickup?.lng ?? null,
+        drop_lat: drop?.lat ?? null,
+        drop_lng: drop?.lng ?? null,
         distance_km: 0,
         fare_paise: Math.max(50000, Math.round(Number(deal.total_paise) * 0.05)),
         status: "offered",
@@ -94,13 +137,14 @@ function Detail() {
 
   const pay = async () => {
     try {
-      await updateStatus.mutateAsync({ id: deal.id, status: "paid" });
-      toast.success("Paid into escrow. Released to seller after delivery.");
+      await payFee.mutateAsync(deal.id);
+      toast.success("₹100 booking fee paid. Booking confirmed.");
       setShowPay(false);
     } catch (e: any) {
       toast.error(e.message || "Payment failed");
     }
   };
+
 
   const release = async () => {
     try {
@@ -162,14 +206,16 @@ function Detail() {
 
       <section className="mt-6 grid sm:grid-cols-2 gap-4">
         <div className="rounded-2xl bg-card ring-1 ring-border p-5">
-          <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><IndianRupee className="size-4 text-brand-clay" /> Payment</h3>
-          <p className="text-2xl font-bold text-rupee">{rupees(Number(deal.total_paise))}</p>
+          <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><IndianRupee className="size-4 text-brand-clay" /> Booking fee</h3>
+          <p className="text-2xl font-bold text-rupee">{rupees(BOOKING_FEE_PAISE)}</p>
           <p className="text-xs text-muted-foreground mt-1">
-            {deal.status === "pending_payment" ? "Pay into escrow to proceed" : "Held in escrow until delivery"}
+            {deal.booking_fee_paid_at
+              ? `Paid · order value ${rupees(Number(deal.total_paise))} settled on delivery`
+              : `Flat ₹100 to confirm this booking. Order value ${rupees(Number(deal.total_paise))} is paid on delivery.`}
           </p>
           {deal.status === "pending_payment" && isBuyer && (
             <Button onClick={() => setShowPay(true)} className="mt-3 w-full bg-brand-clay text-white font-bold">
-              Pay {rupees(Number(deal.total_paise))} via UPI
+              Pay {rupees(BOOKING_FEE_PAISE)} booking fee
             </Button>
           )}
         </div>
@@ -183,6 +229,15 @@ function Detail() {
                 {trip.distance_km ?? 0}km · Fare {rupees(Number(trip.fare_paise))} · <span className="capitalize">{trip.status.replaceAll("_", " ")}</span>
               </p>
               {trip.status === "offered" && <p className="mt-2 text-xs text-brand-clay">Waiting for a driver to accept…</p>}
+              {(isBuyer || isFarmer) && trip.status !== "delivered" && (
+                <div className="mt-3 rounded-xl bg-brand-cream p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                    <KeyRound className="size-3" /> Delivery code
+                  </p>
+                  <p className="mt-1 text-2xl font-extrabold tracking-[0.35em] text-brand-green">{trip.delivery_otp}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">Share this with the driver only when the goods arrive.</p>
+                </div>
+              )}
             </>
           ) : (
             <>
@@ -197,7 +252,27 @@ function Detail() {
         </div>
       </section>
 
+      <section className="mt-6 rounded-2xl bg-card ring-1 ring-border p-5">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <h3 className="font-semibold text-sm flex items-center gap-2"><MapPin className="size-4 text-brand-clay" /> Live tracking</h3>
+          <p className="text-[11px] text-muted-foreground">
+            {locError ? locError : sharing ? "Sharing your live location" : "Allow location to appear on the map"}
+          </p>
+        </div>
+        <div className="mt-3">
+          <LiveMap pins={pins} height={300} />
+        </div>
+        <div className="mt-3 flex flex-wrap gap-3 text-[11px] text-muted-foreground">
+          <Legend color="#166534" label="Farmer" />
+          <Legend color="#c2410c" label="Buyer" />
+          <Legend color="#1d4ed8" label="Delivery partner" />
+          <Legend color="#4d7c0f" label="Pickup" />
+          <Legend color="#9333ea" label="Drop" />
+        </div>
+      </section>
+
       <ContactCard deal={deal} trip={trip} viewerId={user?.id} />
+
 
 
 
@@ -247,21 +322,24 @@ function Detail() {
       <Dialog open={showPay} onOpenChange={setShowPay}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Pay via UPI</DialogTitle>
-            <DialogDescription>Mock Razorpay-style payment. No real charge.</DialogDescription>
+            <DialogTitle>Pay booking fee</DialogTitle>
+            <DialogDescription>
+              A flat ₹100 trust deposit confirms the booking. The rest is settled directly with the seller on delivery.
+            </DialogDescription>
           </DialogHeader>
           <div className="rounded-xl bg-brand-cream p-5 text-center">
-            <p className="text-xs uppercase text-muted-foreground tracking-widest">Amount</p>
-            <p className="text-3xl font-bold text-brand-green text-rupee mt-1">{rupees(Number(deal.total_paise))}</p>
-            <p className="text-xs mt-3 text-muted-foreground">UPI ID: agriconnect@hdfc</p>
+            <p className="text-xs uppercase text-muted-foreground tracking-widest">Booking fee</p>
+            <p className="text-3xl font-bold text-brand-green text-rupee mt-1">{rupees(BOOKING_FEE_PAISE)}</p>
+            <p className="text-xs mt-3 text-muted-foreground">UPI ID: kartmar@hdfc · simulated payment, no real charge</p>
           </div>
           <DialogFooter>
-            <Button onClick={pay} disabled={updateStatus.isPending} className="w-full bg-brand-clay text-white">
-              {updateStatus.isPending ? "Processing…" : "Confirm payment"}
+            <Button onClick={pay} disabled={payFee.isPending} className="w-full bg-brand-clay text-white">
+              {payFee.isPending ? "Processing…" : `Pay ${rupees(BOOKING_FEE_PAISE)}`}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
 
       <Dialog open={showDispute} onOpenChange={setShowDispute}>
         <DialogContent>
@@ -364,3 +442,12 @@ function ContactCard({
   );
 }
 
+
+function Legend({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className="size-2.5 rounded-full" style={{ backgroundColor: color }} />
+      {label}
+    </span>
+  );
+}
