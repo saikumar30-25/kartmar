@@ -50,6 +50,35 @@ function Detail() {
   const [showRate, setShowRate] = useState(false);
   const [draft, setDraft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const payFee = usePayBookingFee();
+  const geocode = useServerFn(geocodeAddress);
+
+  const myRole = user?.id === deal?.farmer_id ? "farmer" : user?.id === deal?.buyer_id ? "buyer" : "partner";
+  const { sharing, error: locError } = useShareMyLocation(
+    deal?.id,
+    user?.id,
+    myRole,
+    !!deal && deal.status !== "completed" && deal.status !== "cancelled",
+  );
+  const { data: liveLocations = [] } = useDealLocations(deal?.id);
+
+  const pins = useMemo<Pin[]>(() => {
+    const out: Pin[] = liveLocations
+      .filter((l) => Number.isFinite(l.lat) && Number.isFinite(l.lng))
+      .map((l) => ({
+        id: `live-${l.user_id}`,
+        label: l.role === "farmer" ? "Farmer" : l.role === "buyer" ? "Buyer" : "Driver",
+        lat: l.lat,
+        lng: l.lng,
+        kind: (l.role === "farmer" ? "farmer" : l.role === "buyer" ? "buyer" : "partner") as Pin["kind"],
+      }));
+    if (trip?.pickup_lat && trip?.pickup_lng)
+      out.push({ id: "pickup", label: "Pickup", lat: Number(trip.pickup_lat), lng: Number(trip.pickup_lng), kind: "pickup" });
+    if (trip?.drop_lat && trip?.drop_lng)
+      out.push({ id: "drop", label: "Drop", lat: Number(trip.drop_lat), lng: Number(trip.drop_lng), kind: "drop" });
+    return out;
+  }, [liveLocations, trip?.pickup_lat, trip?.pickup_lng, trip?.drop_lat, trip?.drop_lng]);
+
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
