@@ -4,16 +4,20 @@ import { rupees } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useEffect, useMemo, useState } from "react";
-import { Truck, MapPin, Check, IndianRupee, Star, Loader2 } from "lucide-react";
+import { Truck, MapPin, Check, IndianRupee, Star, Loader2, KeyRound } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
   useMyPartnerProfile, useTogglePartnerOnline, usePartnerTrips,
-  useAcceptTrip, useUpdateTripStatus, useRequireAuth,
+  useAcceptTrip, useUpdateTripStatus, useRequireAuth, useCompleteDeliveryWithOtp,
 } from "@/lib/queries";
+import { LiveMap, type MapPin as Pin } from "@/components/LiveMap";
+import { useShareMyLocation, useDealLocations } from "@/lib/live-location";
 import { useI18n } from "@/lib/i18n";
+
 
 export const Route = createFileRoute("/partner")({
   head: () => ({ meta: [{ title: "Partner dashboard — AgriConnect" }] }),
