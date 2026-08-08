@@ -207,6 +207,18 @@ function Partner() {
 
       <section>
         <h2 className="font-serif italic text-2xl text-brand-green mb-4">My trips</h2>
+        {activeTrip && (
+          <div className="mb-4 rounded-2xl bg-card ring-1 ring-border p-4">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <p className="text-sm font-extrabold flex items-center gap-2">
+                <MapPin className="size-4 text-brand-clay" /> Live route · {activeTrip.pickup_district} → {activeTrip.drop_district}
+              </p>
+              <p className="text-[11px] text-muted-foreground">Farmer, buyer and you are tracked live</p>
+            </div>
+            <div className="mt-3"><LiveMap pins={pins} height={280} /></div>
+          </div>
+        )}
+
         {mine.length === 0 ? (
           <p className="text-sm text-muted-foreground">No trips yet.</p>
         ) : (
@@ -219,7 +231,14 @@ function Partner() {
                   <p className="text-xs text-muted-foreground capitalize">{t.status.replaceAll("_", " ")}</p>
                 </div>
                 <p className="font-bold text-sm text-rupee">{rupees(Number(t.fare_paise))}</p>
-                <NextActionButton tripId={t.id} status={t.status} onUpdate={(s) => updateStatus.mutate({ id: t.id, status: s })} pending={updateStatus.isPending} />
+                <NextActionButton
+                  tripId={t.id}
+                  status={t.status}
+                  onUpdate={(s) => updateStatus.mutate({ id: t.id, status: s })}
+                  onVerify={() => { setOtpTripId(t.id); setOtp(""); }}
+                  pending={updateStatus.isPending}
+                />
+
               </div>
             ))}
           </div>
@@ -265,14 +284,38 @@ function Partner() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!otpTripId} onOpenChange={(o) => { if (!o) { setOtpTripId(null); setOtp(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm delivery</DialogTitle>
+            <DialogDescription>
+              Ask the customer for the 6-digit delivery code shown in their Kartmar deal page.
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            value={otp}
+            onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+            placeholder="6-digit code"
+            inputMode="numeric"
+            className="text-center text-2xl tracking-[0.4em] font-extrabold h-14"
+          />
+          <DialogFooter>
+            <Button onClick={submitOtp} disabled={otp.length !== 6 || completeWithOtp.isPending} className="w-full bg-brand-green text-brand-cream">
+              {completeWithOtp.isPending ? "Verifying…" : "Verify & complete delivery"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
 
-function NextActionButton({ status, onUpdate, pending }: { tripId: string; status: string; onUpdate: (s: any) => void; pending: boolean }) {
+function NextActionButton({ status, onUpdate, onVerify, pending }: { tripId: string; status: string; onUpdate: (s: any) => void; onVerify: () => void; pending: boolean }) {
   if (status === "accepted") return <Button size="sm" disabled={pending} onClick={() => onUpdate("picked_up")} className="bg-brand-clay text-white">Mark picked up</Button>;
   if (status === "picked_up") return <Button size="sm" disabled={pending} onClick={() => onUpdate("in_transit")} className="bg-brand-clay text-white">Start trip</Button>;
-  if (status === "in_transit") return <Button size="sm" disabled={pending} onClick={() => onUpdate("delivered")} className="bg-brand-green text-brand-cream">Mark delivered</Button>;
+  if (status === "in_transit") return <Button size="sm" disabled={pending} onClick={onVerify} className="bg-brand-green text-brand-cream"><KeyRound className="size-3.5 mr-1.5" /> Enter delivery code</Button>;
   return null;
 }
 
