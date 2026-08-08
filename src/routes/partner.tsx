@@ -38,12 +38,53 @@ function Partner() {
   const { t } = useI18n();
   const [seenOfferIds, setSeenOfferIds] = useState<Set<string>>(new Set());
   const [activeOffer, setActiveOffer] = useState<string | null>(null);
+  const completeWithOtp = useCompleteDeliveryWithOtp();
+  const [otpTripId, setOtpTripId] = useState<string | null>(null);
+  const [otp, setOtp] = useState("");
 
   const offered = useMemo(() => trips.filter((t) => t.status === "offered" && !t.partner_id), [trips]);
   const mine = useMemo(() => trips.filter((t) => t.partner_id === user?.id), [trips, user]);
+  const activeTrip = useMemo(
+    () => mine.find((t) => ["accepted", "picked_up", "in_transit"].includes(t.status)),
+    [mine],
+  );
+
+  // Broadcast the driver's live GPS to the deal participants while a trip is running.
+  useShareMyLocation(activeTrip?.deal_id, user?.id, "partner", !!activeTrip);
+  const { data: liveLocations = [] } = useDealLocations(activeTrip?.deal_id);
+
+  const pins = useMemo<Pin[]>(() => {
+    const out: Pin[] = liveLocations
+      .filter((l) => Number.isFinite(l.lat) && Number.isFinite(l.lng))
+      .map((l) => ({
+        id: `live-${l.user_id}`,
+        label: l.role === "farmer" ? "Farmer" : l.role === "buyer" ? "Buyer" : "You",
+        lat: l.lat,
+        lng: l.lng,
+        kind: (l.role === "farmer" ? "farmer" : l.role === "buyer" ? "buyer" : "partner") as Pin["kind"],
+      }));
+    if (activeTrip?.pickup_lat && activeTrip?.pickup_lng)
+      out.push({ id: "pickup", label: "Pickup", lat: Number(activeTrip.pickup_lat), lng: Number(activeTrip.pickup_lng), kind: "pickup" });
+    if (activeTrip?.drop_lat && activeTrip?.drop_lng)
+      out.push({ id: "drop", label: "Drop", lat: Number(activeTrip.drop_lat), lng: Number(activeTrip.drop_lng), kind: "drop" });
+    return out;
+  }, [liveLocations, activeTrip]);
+
+  const submitOtp = async () => {
+    if (!otpTripId) return;
+    try {
+      await completeWithOtp.mutateAsync({ tripId: otpTripId, otp });
+      toast.success("Delivery confirmed. Trip closed.");
+      setOtpTripId(null);
+      setOtp("");
+    } catch (e: any) {
+      toast.error(e.message || "Could not verify the code");
+    }
+  };
 
   // Realtime new-offer notification toast
   useEffect(() => {
+
     if (!profile?.is_online) return;
     offered.forEach((t) => {
       if (!seenOfferIds.has(t.id)) {
