@@ -3,19 +3,25 @@ import { AppShell } from "@/components/AppShell";
 import {
   useDeal, useDealRealtime, useDealMessages, useSendDealMessage,
   useUpdateDealStatus, useTripForDeal, useCreateTrip, useRequireAuth,
+  usePayBookingFee, BOOKING_FEE_PAISE,
 } from "@/lib/queries";
 import { rupees } from "@/lib/format";
 import { DealStatus } from "./home";
 import { Button } from "@/components/ui/button";
-import { Check, Truck, IndianRupee, AlertTriangle, Star, Send, Loader2, MessageSquare, Phone } from "lucide-react";
+import { Check, Truck, IndianRupee, AlertTriangle, Star, Send, Loader2, MessageSquare, Phone, MapPin, KeyRound } from "lucide-react";
 import { waLink, telLink } from "@/lib/whatsapp";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { geocodeAddress } from "@/lib/geo.functions";
+import { LiveMap, type MapPin as Pin } from "@/components/LiveMap";
+import { useShareMyLocation, useDealLocations } from "@/lib/live-location";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/deals/$id")({
   head: () => ({ meta: [{ title: "Deal — AgriConnect" }] }),
