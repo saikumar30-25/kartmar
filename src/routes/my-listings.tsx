@@ -39,7 +39,11 @@ function MyListings() {
         <div>
           <p className="text-xs font-bold uppercase tracking-widest text-brand-moss">Manage products</p>
           <h1 className="font-serif italic text-4xl text-brand-green mt-1">My listings</h1>
-          <p className="text-sm text-muted-foreground mt-1">Update today's price or remove sold-out stock.</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Update today's price or remove sold-out stock.
+            {soldCount > 0 && ` ${soldCount} delivered product${soldCount > 1 ? "s" : ""} moved out of your active board.`}
+          </p>
+
         </div>
         <Link
           to="/post-listing"
