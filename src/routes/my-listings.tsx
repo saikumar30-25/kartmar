@@ -24,10 +24,14 @@ export const Route = createFileRoute("/my-listings")({
 function MyListings() {
   const { user } = useRequireAuth();
   useForbidPartner();
-  const { data: listings = [], isLoading } = useMyListings();
+  const { data: allListings = [], isLoading } = useMyListings();
+  // Delivered orders mark the listing sold — it leaves the active board automatically.
+  const listings = allListings.filter((l) => l.status !== "sold");
+  const soldCount = allListings.length - listings.length;
 
   if (!user) return null;
   if (isLoading) return <div className="py-20 grid place-items-center"><Loader2 className="size-6 animate-spin" /></div>;
+
 
   return (
     <div className="space-y-6">
