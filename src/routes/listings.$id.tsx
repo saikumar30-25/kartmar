@@ -15,6 +15,9 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { getSellerNotifyContact } from "@/lib/notify.functions";
+import { clampToListing, validateDealDraft } from "@/lib/deal-validation";
 
 export const Route = createFileRoute("/listings/$id")({
   head: () => ({ meta: [{ title: "Listing — AgriConnect" }] }),
@@ -38,6 +41,7 @@ function Detail() {
   const [iMsg, setIMsg] = useState("");
   const [iQty, setIQty] = useState("");
   const [iOffer, setIOffer] = useState("");
+  const sellerContact = useServerFn(getSellerNotifyContact);
 
   if (isLoading) return <div className="py-20 grid place-items-center"><Loader2 className="size-6 animate-spin" /></div>;
   if (!listing) {
@@ -56,7 +60,29 @@ function Detail() {
 
   const handleConfirm = async () => {
     if (!user || confirmedPrice == null) return;
-    const total = confirmedPrice * Number(listing.quantity);
+    const listingRef = {
+      id: listing.id,
+      farmer_id: listing.farmer_id,
+      price_paise: Number(listing.price_paise),
+      min_price_paise: listing.min_price_paise == null ? null : Number(listing.min_price_paise),
+      quantity: Number(listing.quantity),
+    };
+    const clamped = clampToListing(listingRef, confirmedPrice, Number(listing.quantity));
+    const check = validateDealDraft(
+      {
+        listing_id: listing.id,
+        farmer_id: listing.farmer_id,
+        buyer_id: user.id,
+        quantity: clamped.quantity,
+        agreed_price_paise: clamped.price,
+        total_paise: clamped.total,
+      },
+      { actorId: user.id, listing: listingRef },
+    );
+    if (!check.ok) {
+      toast.error(check.reason);
+      return;
+    }
     try {
       const deal = await createDeal.mutateAsync({
         listing_id: listing.id,
@@ -64,10 +90,10 @@ function Detail() {
         buyer_id: user.id,
         product_name: listing.product_name,
         photo_url: listing.photo_url,
-        quantity: listing.quantity,
+        quantity: clamped.quantity,
         unit: listing.unit,
-        agreed_price_paise: confirmedPrice,
-        total_paise: total,
+        agreed_price_paise: clamped.price,
+        total_paise: clamped.total,
         pickup_district: listing.district,
         drop_district: user.district,
       });
@@ -106,12 +132,22 @@ function Detail() {
       setIMsg(""); setIQty(""); setIOffer("");
 
       // AUTO WhatsApp to farmer with booking notification (before payment).
-      const farmerPhone = (listing as any).farmer?.phone ?? null;
+      // Seller phone is resolved server-side because listing reads hide it
+      // until the interest is accepted.
+      let farmerPhone: string | null = (listing as any).farmer?.phone ?? null;
+      let farmerName: string = (listing as any).farmer?.name ?? "farmer";
+      try {
+        const seller = await sellerContact({ data: { interest_id: created.id } });
+        farmerPhone = seller.phone ?? farmerPhone;
+        farmerName = seller.name || farmerName;
+      } catch {
+        /* fall back to whatever the listing exposed */
+      }
       const qtyText = iQty ? `${iQty} ${listing.unit}` : `${listing.quantity} ${listing.unit}`;
       const offerText = iOffer ? ` at ₹${iOffer}/${listing.unit}` : "";
-      const msg = `Hi ${(listing as any).farmer?.name ?? "farmer"}, this is from Kartmar 🌾 — ${user.name} has BOOKED your ${listing.product_name} (${qtyText})${offerText}. Please open the Kartmar app to Accept or Reject this booking. Buyer contact will be shared once you accept.`;
+      const msg = `Hi ${farmerName}, this is from Kartmar 🌾 — ${user.name} has BOOKED your ${listing.product_name} (${qtyText})${offerText}. Please open the Kartmar app to Accept or Reject this booking. Buyer contact will be shared once you accept.`;
       openWhatsAppWithLog(user.id, waLink(farmerPhone, msg), {
-        to: (listing as any).farmer?.name ?? "Farmer",
+        to: farmerName,
         phone: farmerPhone,
         context: "New booking → farmer (pre-payment)",
         message: msg,
@@ -119,7 +155,9 @@ function Detail() {
       logEvent(user.id, {
         kind: "interest_received",
         title: `Booked ${listing.product_name}`,
-        description: `Notification sent to farmer via WhatsApp + app`,
+        description: farmerPhone
+          ? "Notification sent to farmer via WhatsApp + app"
+          : "In-app notification sent — seller has no phone on file",
         status: farmerPhone ? "sent" : "info",
         meta: { interest_id: created.id, listing_id: listing.id },
       });

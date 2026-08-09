@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./auth";
+import { clampToListing } from "./deal-validation";
 import type { Database } from "@/integrations/supabase/types";
 
 export type ListingRow = Database["public"]["Tables"]["listings"]["Row"];
@@ -139,11 +140,14 @@ export function useRespondInterest() {
           const { data: listing } = await supabase
             .from("listings").select("*").eq("id", data.listing_id).maybeSingle();
           if (listing) {
-            const qty = Math.min(Number(data.quantity ?? listing.quantity), Number(listing.quantity));
-            const floor = Number(listing.min_price_paise ?? Math.round(Number(listing.price_paise) * 0.5));
-            const price = Math.min(
-              Math.max(Number(data.offer_price_paise ?? listing.price_paise), floor),
-              Number(listing.price_paise),
+            const { price, quantity: qty } = clampToListing(
+              {
+                price_paise: Number(listing.price_paise),
+                min_price_paise: listing.min_price_paise == null ? null : Number(listing.min_price_paise),
+                quantity: Number(listing.quantity),
+              },
+              Number(data.offer_price_paise ?? listing.price_paise),
+              Number(data.quantity ?? listing.quantity),
             );
             const { data: buyerProfile } = await supabase
               .from("profiles").select("district").eq("id", data.buyer_id).maybeSingle();
