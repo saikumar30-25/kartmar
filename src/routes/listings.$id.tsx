@@ -60,7 +60,29 @@ function Detail() {
 
   const handleConfirm = async () => {
     if (!user || confirmedPrice == null) return;
-    const total = confirmedPrice * Number(listing.quantity);
+    const listingRef = {
+      id: listing.id,
+      farmer_id: listing.farmer_id,
+      price_paise: Number(listing.price_paise),
+      min_price_paise: listing.min_price_paise == null ? null : Number(listing.min_price_paise),
+      quantity: Number(listing.quantity),
+    };
+    const clamped = clampToListing(listingRef, confirmedPrice, Number(listing.quantity));
+    const check = validateDealDraft(
+      {
+        listing_id: listing.id,
+        farmer_id: listing.farmer_id,
+        buyer_id: user.id,
+        quantity: clamped.quantity,
+        agreed_price_paise: clamped.price,
+        total_paise: clamped.total,
+      },
+      { actorId: user.id, listing: listingRef },
+    );
+    if (!check.ok) {
+      toast.error(check.reason);
+      return;
+    }
     try {
       const deal = await createDeal.mutateAsync({
         listing_id: listing.id,
@@ -68,10 +90,10 @@ function Detail() {
         buyer_id: user.id,
         product_name: listing.product_name,
         photo_url: listing.photo_url,
-        quantity: listing.quantity,
+        quantity: clamped.quantity,
         unit: listing.unit,
-        agreed_price_paise: confirmedPrice,
-        total_paise: total,
+        agreed_price_paise: clamped.price,
+        total_paise: clamped.total,
         pickup_district: listing.district,
         drop_district: user.district,
       });
