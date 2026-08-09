@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./auth";
+import { clampToListing } from "./deal-validation";
 import type { Database } from "@/integrations/supabase/types";
 
 export type ListingRow = Database["public"]["Tables"]["listings"]["Row"];
