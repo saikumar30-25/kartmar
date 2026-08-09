@@ -41,6 +41,7 @@ function Detail() {
   const [iMsg, setIMsg] = useState("");
   const [iQty, setIQty] = useState("");
   const [iOffer, setIOffer] = useState("");
+  const sellerContact = useServerFn(getSellerNotifyContact);
 
   if (isLoading) return <div className="py-20 grid place-items-center"><Loader2 className="size-6 animate-spin" /></div>;
   if (!listing) {
