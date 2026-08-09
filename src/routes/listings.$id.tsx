@@ -106,12 +106,22 @@ function Detail() {
       setIMsg(""); setIQty(""); setIOffer("");
 
       // AUTO WhatsApp to farmer with booking notification (before payment).
-      const farmerPhone = (listing as any).farmer?.phone ?? null;
+      // Seller phone is resolved server-side because listing reads hide it
+      // until the interest is accepted.
+      let farmerPhone: string | null = (listing as any).farmer?.phone ?? null;
+      let farmerName: string = (listing as any).farmer?.name ?? "farmer";
+      try {
+        const seller = await sellerContact({ data: { interest_id: created.id } });
+        farmerPhone = seller.phone ?? farmerPhone;
+        farmerName = seller.name || farmerName;
+      } catch {
+        /* fall back to whatever the listing exposed */
+      }
       const qtyText = iQty ? `${iQty} ${listing.unit}` : `${listing.quantity} ${listing.unit}`;
       const offerText = iOffer ? ` at ₹${iOffer}/${listing.unit}` : "";
-      const msg = `Hi ${(listing as any).farmer?.name ?? "farmer"}, this is from Kartmar 🌾 — ${user.name} has BOOKED your ${listing.product_name} (${qtyText})${offerText}. Please open the Kartmar app to Accept or Reject this booking. Buyer contact will be shared once you accept.`;
+      const msg = `Hi ${farmerName}, this is from Kartmar 🌾 — ${user.name} has BOOKED your ${listing.product_name} (${qtyText})${offerText}. Please open the Kartmar app to Accept or Reject this booking. Buyer contact will be shared once you accept.`;
       openWhatsAppWithLog(user.id, waLink(farmerPhone, msg), {
-        to: (listing as any).farmer?.name ?? "Farmer",
+        to: farmerName,
         phone: farmerPhone,
         context: "New booking → farmer (pre-payment)",
         message: msg,
@@ -119,7 +129,9 @@ function Detail() {
       logEvent(user.id, {
         kind: "interest_received",
         title: `Booked ${listing.product_name}`,
-        description: `Notification sent to farmer via WhatsApp + app`,
+        description: farmerPhone
+          ? "Notification sent to farmer via WhatsApp + app"
+          : "In-app notification sent — seller has no phone on file",
         status: farmerPhone ? "sent" : "info",
         meta: { interest_id: created.id, listing_id: listing.id },
       });
